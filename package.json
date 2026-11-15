@@ -1,0 +1,50 @@
+{
+  "name": "notmusic",
+  "version": "1.0.0",
+  "description": "Next-gen Music Player combining Spotify, Apple Music & YouTube",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "desktop": "electron .",
+    "server": "tsx server/index.ts",
+    "client": "vite",
+    "dev": "concurrently -n \"API,APP\" -c \"magenta,cyan\" \"tsx server/index.ts\" \"vite\"",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "music",
+    "spotify",
+    "apple-music",
+    "youtube",
+    "player"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "autoprefixer": "^10.6.2",
+    "concurrently": "^10.0.7",
+    "electron": "^45.3.2",
+    "lucide-react": "^1.73.0",
+    "postcss": "^8.5.33",
+    "rcedit": "^5.0.2",
+    "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
