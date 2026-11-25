@@ -9,6 +9,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Arka planda kesintisiz YouTube ses çalma hilesi -->
+    <script>
+      try {
+        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
+        window.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
+        document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
+      } catch (e) {}
+    </script>
   </head>
   <body class="bg-[#0a0a0c] text-white selection:bg-emerald-500 selection:text-black overflow-hidden font-sans">
     <div id="root"></div>

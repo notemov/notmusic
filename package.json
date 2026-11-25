@@ -10,8 +10,14 @@
     "server": "tsx server/index.ts",
     "client": "vite",
     "dev": "concurrently -n \"API,APP\" -c \"magenta,cyan\" \"tsx server/index.ts\" \"vite\"",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsc && vite build && npm run build:server",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --format=cjs --outfile=dist-server/index.cjs",
+    "preview": "vite preview",
+    "test": "tsx tests/runner.ts",
+    "test:tier1": "tsx --test tests/tier1-features.test.ts",
+    "test:tier2": "tsx --test tests/tier2-boundary.test.ts",
+    "test:tier3": "tsx --test tests/tier3-combination.test.ts",
+    "test:tier4": "tsx --test tests/tier4-scenarios.test.ts"
   },
   "keywords": [
     "music",
@@ -39,6 +45,7 @@
     "autoprefixer": "^10.6.2",
     "concurrently": "^10.0.7",
     "electron": "^45.3.2",
+    "esbuild": "^0.28.2",
     "lucide-react": "^1.73.0",
     "postcss": "^8.5.33",
     "rcedit": "^5.0.2",

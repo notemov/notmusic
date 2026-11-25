@@ -19,7 +19,8 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, queueContext }) => 
     toggleLike, 
     addToQueue,
     playlists,
-    addTrackToPlaylist
+    addTrackToPlaylist,
+    showToast,
   } = usePlayer();
 
   const [showMenu, setShowMenu] = React.useState(false);
@@ -67,6 +68,9 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, queueContext }) => 
           src={track.coverUrl}
           alt={track.title}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
+          }}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
@@ -144,7 +148,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({ track, queueContext }) => 
                 onClick={async () => {
                   await saveOfflineTrack(track);
                   setShowMenu(false);
-                  alert(`"${track.title}" çevrim dışı kütüphaneye indirildi!`);
+                  showToast(`"${track.title}" indirildi!`);
                 }}
                 className="w-full text-left px-3 py-2 text-cyan-400 hover:text-white hover:bg-white/10 flex items-center gap-2"
               >

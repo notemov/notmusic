@@ -5,10 +5,14 @@ import {
   ViewType, 
   UserProfile, 
   AppSettings, 
-  HistoryItem, 
-  ThemeType 
+  HistoryItem
 } from '../types';
-import { resolveYouTubeId, getPersonalizedRecommendations } from '../services/api';
+import { 
+  resolveYouTubeId, 
+  getPersonalizedRecommendations, 
+  getUserDataApi, 
+  saveUserDataApi
+} from '../services/api';
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -80,11 +84,37 @@ interface PlayerContextType {
   setSleepTimer: (minutes: number | null) => void;
   refreshRecommendations: () => void;
   ytPlayerRef: React.MutableRefObject<any>;
+  audioPreviewRef: React.MutableRefObject<HTMLAudioElement | null>;
+  userPausedRef: React.MutableRefObject<boolean>;
+  toast: string | null;
+  showToast: (msg: string) => void;
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
 
+function sanitizeProfile(raw: any): UserProfile {
+  return {
+    name: raw?.name || 'notemov',
+    avatar: raw?.avatar || 'dj-cool',
+    bio: raw?.bio || 'nabersiniz',
+    favoriteGenre: raw?.favoriteGenre || 'Türkçe Pop',
+    joinedDate: raw?.joinedDate || 'Kasım 2026',
+  };
+}
+
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const userPausedRef = useRef<boolean>(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<any>(null);
+
+  const showToast = (msg: string) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast(msg);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+    }, 2800);
+  };
+
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -97,22 +127,33 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [queue, setQueue] = useState<Track[]>([]);
   const [queueIndex, setQueueIndex] = useState<number>(-1);
 
-  // User Profile state
+  const queueRef = useRef<Track[]>(queue);
+  queueRef.current = queue;
+
+  const queueIndexRef = useRef<number>(queueIndex);
+  queueIndexRef.current = queueIndex;
+
+  const repeatModeRef = useRef(repeatMode);
+  repeatModeRef.current = repeatMode;
+
+  const isShuffleRef = useRef(isShuffle);
+  isShuffleRef.current = isShuffle;
+
+  const currentTrackRef = useRef(currentTrack);
+  currentTrackRef.current = currentTrack;
+
+  // User Profile state (clean personal preferences without IDs or social handles)
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem('notmusic_profile');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        return sanitizeProfile(JSON.parse(saved));
+      }
     } catch {}
-    return {
-      name: 'Müziksever',
-      avatar: 'dj-cool',
-      bio: 'Müzik ruhun gıdasıdır 🎧',
-      favoriteGenre: 'Türkçe Pop',
-      joinedDate: 'Kasım 2026',
-    };
+    return sanitizeProfile(null);
   });
 
-  // App Settings state (Custom App Name, Icon, Theme, Audio Quality)
+  // App Settings state
   const [appSettings, setAppSettings] = useState<AppSettings>(() => {
     try {
       const saved = localStorage.getItem('notmusic_settings');
@@ -176,6 +217,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Smart Recommendations state
   const [recommendations, setRecommendations] = useState<Track[]>([]);
+  const recommendationsRef = useRef<Track[]>(recommendations);
+  recommendationsRef.current = recommendations;
 
   // Navigation & Modals state
   const [activeView, setActiveView] = useState<ViewType>('home');
@@ -184,22 +227,63 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isLyricsOpen, setIsLyricsOpen] = useState<boolean>(false);
   const [isVisualizerOpen, setIsVisualizerOpen] = useState<boolean>(false);
   const [isQueueOpen, setIsQueueOpen] = useState<boolean>(false);
-  const [isVideoOpen, setIsVideoOpen] = useState<boolean>(false);
+  const [isVideoOpen, setIsVideoOpenState] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
-  const [activeSourceTab, setActiveSourceTab] = useState<'all' | 'spotify' | 'apple' | 'youtube'>('all');
+
+  const [activeSourceTab, setActiveSourceTabState] = useState<'all' | 'spotify' | 'apple' | 'youtube'>('all');
+  const activeSourceTabRef = useRef(activeSourceTab);
+  activeSourceTabRef.current = activeSourceTab;
+
   const [currentYoutubeId, setCurrentYoutubeId] = useState<string | null>(null);
   const [isLoadingTrack, setIsLoadingTrack] = useState<boolean>(false);
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
 
   // References
   const ytPlayerRef = useRef<any>(null);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
 
-  // Apply dark theme to document.body & title
+  // Video can ONLY be opened when playing a YouTube track and NOT on Spotify/Apple tabs
+  const setIsVideoOpen = (val: boolean) => {
+    if (!val) {
+      setIsVideoOpenState(false);
+      return;
+    }
+    const tab = activeSourceTabRef.current;
+    const track = currentTrackRef.current;
+    if (tab === 'spotify' || tab === 'apple') {
+      setIsVideoOpenState(false);
+      showToast('Video modu yalnızca YouTube sekmesinde ve YouTube parçalarında açılabilir');
+      return;
+    }
+    if (!track || track.source !== 'youtube') {
+      setIsVideoOpenState(false);
+      showToast('Video yalnızca YouTube kaynaklı parçalarda izlenebilir');
+      return;
+    }
+    setIsVideoOpenState(true);
+  };
+
+  const setActiveSourceTab = (tab: 'all' | 'spotify' | 'apple' | 'youtube') => {
+    setActiveSourceTabState(tab);
+    activeSourceTabRef.current = tab;
+    if (tab !== 'youtube') {
+      setIsVideoOpenState(false);
+    }
+  };
+
+  // Auto-close video if current track is Spotify or Apple Music
   useEffect(() => {
-    document.body.setAttribute('data-theme', 'dark');
+    if (!currentTrack || currentTrack.source !== 'youtube') {
+      setIsVideoOpenState(false);
+    }
+  }, [currentTrack?.id, currentTrack?.source]);
+
+  // Apply theme to document.body & title
+  useEffect(() => {
+    document.body.setAttribute('data-theme', appSettings.theme || 'dark');
     document.title = `${appSettings.appName} — Spotify, Apple Music & YouTube`;
-  }, [appSettings.appName]);
+  }, [appSettings.appName, appSettings.theme]);
 
   // Persist Profile
   useEffect(() => {
@@ -246,6 +330,60 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [historyItems]);
 
+  // Sync selectedPlaylist when playlists mutate (e.g. adding/removing tracks)
+  useEffect(() => {
+    if (selectedPlaylist) {
+      const updated = playlists.find(p => p.id === selectedPlaylist.id);
+      if (updated) setSelectedPlaylist(updated);
+    }
+  }, [playlists]);
+
+  // Hydrate user data from disk API on startup
+  useEffect(() => {
+    getUserDataApi().then(diskData => {
+      if (diskData) {
+        if (Array.isArray(diskData.likedTracks) && diskData.likedTracks.length > 0) {
+          setLikedTracks(diskData.likedTracks);
+        }
+        if (Array.isArray(diskData.playlists) && diskData.playlists.length > 0) {
+          setPlaylists(diskData.playlists);
+        }
+        if (diskData.userProfile) {
+          setUserProfile(sanitizeProfile(diskData.userProfile));
+        }
+        if (Array.isArray(diskData.historyItems) && diskData.historyItems.length > 0) {
+          setHistoryItems(diskData.historyItems);
+        }
+      }
+    });
+
+    // Provide default ready-to-play track on first launch if empty
+    setCurrentTrack(prev => {
+      if (prev) return prev;
+      return {
+        id: 'yt_chart_1',
+        title: 'Die With A Smile',
+        artist: 'Lady Gaga & Bruno Mars',
+        album: 'Die With A Smile',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/11/ae/f2/11aef294-f57c-bab9-c9fc-529162984e62/24UMGIM85348.rgb.jpg/600x600bb.jpg',
+        duration: '4:11',
+        durationSec: 251,
+        source: 'youtube',
+        youtubeId: 'kPa7bsKwL-8',
+      };
+    });
+  }, []);
+
+  // Save to disk whenever liked tracks, playlists, profile or history changes
+  useEffect(() => {
+    saveUserDataApi({
+      likedTracks,
+      playlists,
+      userProfile,
+      historyItems,
+    });
+  }, [likedTracks, playlists, userProfile, historyItems]);
+
   // Fetch Smart Recommendations based on History and Liked Artists
   const refreshRecommendations = async () => {
     const artistCounts = new Map<string, number>();
@@ -271,12 +409,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [historyItems.length, likedTracks.length, userProfile.favoriteGenre]);
 
   // Ultra-Fast Queue Pre-fetching: Pre-resolve the next 2 tracks in background
-  // so when user clicks "Next", the track starts in 0 milliseconds!
   useEffect(() => {
     if (queue.length > 0 && queueIndex >= 0) {
       const nextTracks = [queue[queueIndex + 1], queue[queueIndex + 2]].filter(Boolean);
       nextTracks.forEach(t => {
-        if (!t.youtubeId) {
+        if (!t.youtubeId && !t.previewUrl?.startsWith('/api/download-file/')) {
           resolveYouTubeId(t.title, t.artist).then(ytId => {
             if (ytId) {
               setQueue(prev => prev.map(item => item.id === t.id ? { ...item, youtubeId: ytId } : item));
@@ -314,19 +451,46 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Play track & record history
   const playTrack = async (track: Track, newQueue?: Track[]) => {
+    userPausedRef.current = false;
+    if (track.source !== 'youtube') {
+      setIsVideoOpenState(false);
+    }
+
     setIsLoadingTrack(true);
     setCurrentTrack(track);
+    currentTrackRef.current = track;
     setCurrentTime(0);
     setDuration(track.durationSec || 210);
 
-    if (newQueue) {
+    if (newQueue && newQueue.length > 0) {
       setQueue(newQueue);
+      queueRef.current = newQueue;
       const idx = newQueue.findIndex(t => t.id === track.id);
-      setQueueIndex(idx >= 0 ? idx : 0);
+      const safeIdx = idx >= 0 ? idx : 0;
+      setQueueIndex(safeIdx);
+      queueIndexRef.current = safeIdx;
     } else {
-      if (queue.length === 0) {
-        setQueue([track]);
+      if (queueRef.current.length === 0) {
+        const initialQueue = recommendationsRef.current.length > 0
+          ? [track, ...recommendationsRef.current.filter(r => r.id !== track.id)]
+          : [track];
+        setQueue(initialQueue);
+        queueRef.current = initialQueue;
         setQueueIndex(0);
+        queueIndexRef.current = 0;
+      } else {
+        const idx = queueRef.current.findIndex(t => t.id === track.id);
+        if (idx >= 0) {
+          setQueueIndex(idx);
+          queueIndexRef.current = idx;
+        } else {
+          const updatedQueue = [...queueRef.current, track];
+          setQueue(updatedQueue);
+          queueRef.current = updatedQueue;
+          const newIdx = updatedQueue.length - 1;
+          setQueueIndex(newIdx);
+          queueIndexRef.current = newIdx;
+        }
       }
     }
 
@@ -340,7 +504,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ...prev.filter(h => h.track.id !== track.id),
     ].slice(0, 100));
 
-    // Fast-path 1: If track already has YouTube ID, play instantly (0ms delay!)
+    // Offline downloaded MP3 playback path (local file, no YouTube resolution needed)
+    if (track.previewUrl?.startsWith('/api/download-file/')) {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.stopVideo === 'function') {
+        try { ytPlayerRef.current.stopVideo(); } catch {}
+      }
+      setCurrentYoutubeId(null);
+      setIsPlaying(true);
+      setIsLoadingTrack(false);
+      return;
+    }
+
+    // Fast-path 1: Track already has YouTube ID -> start immediately
     if (track.youtubeId) {
       setCurrentYoutubeId(track.youtubeId);
       setIsPlaying(true);
@@ -349,49 +524,74 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ytPlayerRef.current.loadVideoById(track.youtubeId);
         ytPlayerRef.current.playVideo();
       }
-    } else {
-      // Fast-path 2: If track has audio preview (Apple/Spotify), start audio instantly (< 30ms)!
-      if (track.previewUrl) {
-        setCurrentYoutubeId(null);
-        setIsPlaying(true);
-        setIsLoadingTrack(false);
-      } else {
-        setIsLoadingTrack(true);
-      }
-
-      // Fast-path 3: Resolve full YouTube ID asynchronously in the background
-      resolveYouTubeId(track.title, track.artist).then(resolvedId => {
-        if (resolvedId) {
-          // Cache in current queue item
-          setQueue(prev => prev.map(t => t.id === track.id ? { ...t, youtubeId: resolvedId } : t));
-          setCurrentYoutubeId(resolvedId);
-          setIsLoadingTrack(false);
-          setIsPlaying(true);
-          if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
-            ytPlayerRef.current.loadVideoById(resolvedId);
-            ytPlayerRef.current.playVideo();
-          }
-        }
-      });
+      return;
     }
+
+    // Fast-path 2: Resolve full-length stream in background (prevent double playback & race condition)
+    const targetTrackId = track.id;
+    resolveYouTubeId(track.title, track.artist).then(resolvedId => {
+      if (currentTrackRef.current?.id !== targetTrackId) return; // user switched tracks
+
+      if (resolvedId) {
+        setQueue(prev => prev.map(t => t.id === track.id ? { ...t, youtubeId: resolvedId } : t));
+        queueRef.current = queueRef.current.map(t => t.id === track.id ? { ...t, youtubeId: resolvedId } : t);
+        setCurrentYoutubeId(resolvedId);
+        setIsLoadingTrack(false);
+        setIsPlaying(true);
+        if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+          ytPlayerRef.current.loadVideoById(resolvedId);
+          ytPlayerRef.current.playVideo();
+        }
+      } else if (track.previewUrl) {
+        setCurrentYoutubeId(null);
+        setIsLoadingTrack(false);
+        setIsPlaying(true);
+      } else {
+        setIsLoadingTrack(false);
+        setIsPlaying(false);
+        showToast('Bu parça şu an yüklenemedi.');
+      }
+    });
   };
 
   const togglePlay = () => {
     if (!currentTrack) return;
+
+    // Handle HTML5 Audio element if active (offline download or preview fallback)
+    if (!currentYoutubeId && audioPreviewRef.current && audioPreviewRef.current.src) {
+      if (isPlaying) {
+        userPausedRef.current = true;
+        audioPreviewRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        userPausedRef.current = false;
+        audioPreviewRef.current.play().catch(() => {});
+        setIsPlaying(true);
+      }
+      return;
+    }
+
     if (ytPlayerRef.current && typeof ytPlayerRef.current.getPlayerState === 'function') {
       if (isPlaying) {
+        userPausedRef.current = true;
         ytPlayerRef.current.pauseVideo();
         setIsPlaying(false);
       } else {
+        userPausedRef.current = false;
         ytPlayerRef.current.playVideo();
         setIsPlaying(true);
       }
     } else {
+      userPausedRef.current = !isPlaying;
       setIsPlaying(!isPlaying);
     }
   };
 
   const pause = () => {
+    userPausedRef.current = true;
+    if (audioPreviewRef.current && !audioPreviewRef.current.paused) {
+      audioPreviewRef.current.pause();
+    }
     if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
       ytPlayerRef.current.pauseVideo();
     }
@@ -399,45 +599,89 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const playNext = () => {
-    if (queue.length === 0) return;
-    if (repeatMode === 'one' && currentTrack) {
+    userPausedRef.current = false;
+    const currentQ = queueRef.current;
+    const currentIdx = queueIndexRef.current;
+    const repMode = repeatModeRef.current;
+    const shuffle = isShuffleRef.current;
+
+    if (currentQ.length === 0) {
+      if (recommendationsRef.current.length > 0) {
+        const nextTrack = recommendationsRef.current[0];
+        setQueue(recommendationsRef.current);
+        queueRef.current = recommendationsRef.current;
+        setQueueIndex(0);
+        queueIndexRef.current = 0;
+        playTrack(nextTrack, recommendationsRef.current);
+      }
+      return;
+    }
+
+    if (repMode === 'one' && currentTrackRef.current) {
       seekTo(0);
       if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
         ytPlayerRef.current.playVideo();
+      }
+      if (!currentYoutubeId && audioPreviewRef.current && audioPreviewRef.current.src) {
+        audioPreviewRef.current.play().catch(() => {});
       }
       setIsPlaying(true);
       return;
     }
 
-    let nextIdx = queueIndex + 1;
-    if (isShuffle) {
-      nextIdx = Math.floor(Math.random() * queue.length);
+    let nextIdx = currentIdx + 1;
+    if (shuffle && currentQ.length > 1) {
+      let randIdx = Math.floor(Math.random() * currentQ.length);
+      while (randIdx === currentIdx && currentQ.length > 1) {
+        randIdx = Math.floor(Math.random() * currentQ.length);
+      }
+      nextIdx = randIdx;
     }
 
-    if (nextIdx < queue.length) {
+    if (nextIdx < currentQ.length) {
       setQueueIndex(nextIdx);
-      playTrack(queue[nextIdx], queue);
-    } else if (repeatMode === 'all') {
-      setQueueIndex(0);
-      playTrack(queue[0], queue);
+      queueIndexRef.current = nextIdx;
+      playTrack(currentQ[nextIdx], currentQ);
     } else {
-      setIsPlaying(false);
+      if (recommendationsRef.current.length > 0) {
+        const unused = recommendationsRef.current.filter(r => !currentQ.some(q => q.id === r.id));
+        if (unused.length > 0) {
+          const nextTrack = unused[0];
+          const newQ = [...currentQ, nextTrack];
+          setQueue(newQ);
+          queueRef.current = newQ;
+          setQueueIndex(currentQ.length);
+          queueIndexRef.current = currentQ.length;
+          playTrack(nextTrack, newQ);
+          return;
+        }
+      }
+      setQueueIndex(0);
+      queueIndexRef.current = 0;
+      playTrack(currentQ[0], currentQ);
     }
   };
 
   const playPrevious = () => {
+    userPausedRef.current = false;
     if (currentTime > 4) {
       seekTo(0);
       return;
     }
-    if (queue.length === 0) return;
-    const prevIdx = queueIndex > 0 ? queueIndex - 1 : 0;
+    const currentQ = queueRef.current;
+    if (currentQ.length === 0) return;
+    const currentIdx = queueIndexRef.current;
+    const prevIdx = currentIdx > 0 ? currentIdx - 1 : currentQ.length - 1;
     setQueueIndex(prevIdx);
-    playTrack(queue[prevIdx], queue);
+    queueIndexRef.current = prevIdx;
+    playTrack(currentQ[prevIdx], currentQ);
   };
 
   const seekTo = (seconds: number) => {
     setCurrentTime(seconds);
+    if (!currentYoutubeId && audioPreviewRef.current && audioPreviewRef.current.src) {
+      audioPreviewRef.current.currentTime = seconds;
+    }
     if (ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
       ytPlayerRef.current.seekTo(seconds, true);
     }
@@ -446,6 +690,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setVolume = (val: number) => {
     setVolumeState(val);
     setIsMuted(val === 0);
+    if (audioPreviewRef.current) {
+      audioPreviewRef.current.volume = val;
+    }
     if (ytPlayerRef.current && typeof ytPlayerRef.current.setVolume === 'function') {
       ytPlayerRef.current.setVolume(Math.round(val * 100));
     }
@@ -454,11 +701,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const toggleMute = () => {
     if (isMuted) {
       setIsMuted(false);
+      if (audioPreviewRef.current) audioPreviewRef.current.volume = volume;
       if (ytPlayerRef.current && typeof ytPlayerRef.current.unMute === 'function') {
         ytPlayerRef.current.unMute();
       }
     } else {
       setIsMuted(true);
+      if (audioPreviewRef.current) audioPreviewRef.current.volume = 0;
       if (ytPlayerRef.current && typeof ytPlayerRef.current.mute === 'function') {
         ytPlayerRef.current.mute();
       }
@@ -492,6 +741,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addToQueue = (track: Track) => {
     setQueue(prev => [...prev, track]);
+    showToast(`"${track.title}" çalma sırasına eklendi`);
   };
 
   const removeFromQueue = (index: number) => {
@@ -530,6 +780,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return pl;
       })
     );
+    showToast(`"${track.title}" listeye eklendi`);
   };
 
   const removeTrackFromPlaylist = (playlistId: string, trackId: string) => {
@@ -557,7 +808,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const updateProfile = (profile: Partial<UserProfile>) => {
-    setUserProfile(prev => ({ ...prev, ...profile }));
+    setUserProfile(prev => sanitizeProfile({ ...prev, ...profile }));
   };
 
   const updateSettings = (settings: Partial<AppSettings>) => {
@@ -638,6 +889,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setSleepTimer,
         refreshRecommendations,
         ytPlayerRef,
+        audioPreviewRef,
+        userPausedRef,
+        toast,
+        showToast,
       }}
     >
       {children}

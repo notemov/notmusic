@@ -3,16 +3,34 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-
-const isCjs = typeof __dirname !== 'undefined';
-const currentDir = isCjs ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const currentDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 const distPath = path.join(currentDir, '../dist');
 const downloadsDir = path.join(currentDir, '../downloads');
 if (!fs.existsSync(downloadsDir)) {
   fs.mkdirSync(downloadsDir, { recursive: true });
 }
 const downloadsManifestFile = path.join(downloadsDir, 'downloads.json');
+
+const dataDir = path.join(currentDir, '../data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+const userDataFile = path.join(dataDir, 'user_data.json');
+
+function getUserData(): any {
+  try {
+    if (fs.existsSync(userDataFile)) {
+      return JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
+    }
+  } catch (e) {}
+  return { likedTracks: [], playlists: [], userProfile: null, historyItems: [] };
+}
+
+function saveUserData(data: any) {
+  try {
+    fs.writeFileSync(userDataFile, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {}
+}
 
 function getDownloadsManifest(): any[] {
   try {
@@ -34,6 +52,18 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Disk persistence for Liked Songs, Playlists, Profile, History
+app.get('/api/user-data', (_req: Request, res: Response) => {
+  res.json(getUserData());
+});
+
+app.post('/api/user-data', (req: Request, res: Response) => {
+  const current = getUserData();
+  const updated = { ...current, ...req.body };
+  saveUserData(updated);
+  res.json({ success: true });
+});
 
 // In-memory cache for fast repeated queries
 const cache = new Map<string, { data: any; expiry: number }>();
@@ -70,6 +100,7 @@ async function searchYouTube(query: string, limit: number = 20): Promise<Track[]
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
+        'Cookie': 'SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg; CONSENT=YES+cb.20230531-04-p0.en+FX+999',
       },
     });
     const html = await res.text();
@@ -341,14 +372,14 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
       globalTop = usRes.value.feed.entry.map((e: any) => formatEntry(e, 'apple'));
     }
 
-    // Curated YouTube Trends (Hits with pre-set YouTube IDs)
+    // Curated YouTube Trends (Hits with pre-set YouTube IDs and reliable high-res covers)
     const youtubeTrends: Track[] = [
       {
         id: 'yt_chart_1',
         title: 'Die With A Smile',
         artist: 'Lady Gaga & Bruno Mars',
         album: 'Die With A Smile',
-        coverUrl: 'https://i.ytimg.com/vi/kPa7bsKwL-8/hqdefault.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/11/ae/f2/11aef294-f57c-bab9-c9fc-529162984e62/24UMGIM85348.rgb.jpg/600x600bb.jpg',
         duration: '4:11',
         durationSec: 251,
         source: 'youtube',
@@ -359,7 +390,7 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
         title: 'Birds of a Feather',
         artist: 'Billie Eilish',
         album: 'HIT ME HARD AND SOFT',
-        coverUrl: 'https://i.ytimg.com/vi/V9PVRfjEBTI/hqdefault.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/4a/89/3b/4a893baa-f87c-2ea7-227a-8f52f36f90d5/24UMGIM33146.rgb.jpg/600x600bb.jpg',
         duration: '3:18',
         durationSec: 198,
         source: 'youtube',
@@ -370,7 +401,7 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
         title: 'Espresso',
         artist: 'Sabrina Carpenter',
         album: 'Short n\' Sweet',
-        coverUrl: 'https://i.ytimg.com/vi/eVli-tstM5E/hqdefault.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/bf/25/7f/bf257fe1-c966-d4f1-6101-8bf82381f26f/24UMGIM39223.rgb.jpg/600x600bb.jpg',
         duration: '2:55',
         durationSec: 175,
         source: 'youtube',
@@ -381,7 +412,7 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
         title: 'Apt.',
         artist: 'ROSE & Bruno Mars',
         album: 'rosie',
-        coverUrl: 'https://i.ytimg.com/vi/ekr2nIex040/hqdefault.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/58/01/a0/5801a070-df6a-2ee5-eb9e-c88c757c2a71/075679633652.jpg/600x600bb.jpg',
         duration: '2:49',
         durationSec: 169,
         source: 'youtube',
@@ -392,7 +423,7 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
         title: 'Good Luck, Babe!',
         artist: 'Chappell Roan',
         album: 'Good Luck, Babe!',
-        coverUrl: 'https://i.ytimg.com/vi/1RKqOmSkGgM/hqdefault.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/bf/2c/3f/bf2c3fb6-78ff-604b-5517-c812d77054f1/24UMGIM34685.rgb.jpg/600x600bb.jpg',
         duration: '3:38',
         durationSec: 218,
         source: 'youtube',
@@ -403,7 +434,7 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
         title: 'Taste',
         artist: 'Sabrina Carpenter',
         album: 'Short n\' Sweet',
-        coverUrl: 'https://i.ytimg.com/vi/ZFafIclpn8M/hqdefault.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/37/b2/8c/37b28cc1-a6ee-35e6-b605-67c9c0f99ae9/24UMGIM69455.rgb.jpg/600x600bb.jpg',
         duration: '2:37',
         durationSec: 157,
         source: 'youtube',
@@ -414,7 +445,7 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
         title: 'Not Like Us',
         artist: 'Kendrick Lamar',
         album: 'Not Like Us',
-        coverUrl: 'https://i.ytimg.com/vi/H58vbez_m4E/hqdefault.jpg',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/21/bc/1b/21bc1b47-ce47-5d51-6d75-ec9457df7834/24UMGIM52358.rgb.jpg/600x600bb.jpg',
         duration: '4:34',
         durationSec: 274,
         source: 'youtube',
@@ -422,14 +453,36 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
       },
       {
         id: 'yt_chart_8',
-        title: 'Beautiful Things',
-        artist: 'Benson Boone',
-        album: 'Fireworks & Rollerblades',
-        coverUrl: 'https://i.ytimg.com/vi/Oa_RSwwpPaA/hqdefault.jpg',
-        duration: '3:00',
-        durationSec: 180,
+        title: 'KUSURA BAKMA',
+        artist: 'BLOK3',
+        album: 'KUSURA BAKMA',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/91/9f/bf/919fbf3c-c9d3-f002-c8a7-ad093ea65181/198704207865.jpg/600x600bb.jpg',
+        duration: '2:40',
+        durationSec: 160,
         source: 'youtube',
-        youtubeId: 'Oa_RSwwpPaA',
+        youtubeId: '9g-sSbgZ2lI',
+      },
+      {
+        id: 'yt_chart_9',
+        title: 'Güzel Kızım',
+        artist: 'Lvbel C5',
+        album: 'Güzel Kızım',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/bc/40/e3/bc40e3aa-2144-8cb3-d731-8e05cb8f2441/5054197992705.jpg/600x600bb.jpg',
+        duration: '2:25',
+        durationSec: 145,
+        source: 'youtube',
+        youtubeId: 'b7E-x9L2eYI',
+      },
+      {
+        id: 'yt_chart_10',
+        title: 'Aptal Kafam',
+        artist: 'UZI',
+        album: 'Aptal Kafam',
+        coverUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/80/06/f0/8006f014-9989-1383-efca-932d04a63fa3/8683515000574.jpg/600x600bb.jpg',
+        duration: '2:35',
+        durationSec: 155,
+        source: 'youtube',
+        youtubeId: 'jV5UoB3eXzY',
       }
     ];
 
@@ -445,6 +498,14 @@ app.get('/api/charts', async (_req: Request, res: Response) => {
     console.error('Charts error:', err);
     res.status(500).json({ error: err.message });
   }
+});
+
+// Focus existing window endpoint for single-instance enforcement
+app.get('/api/focus-window', (req: Request, res: Response) => {
+  if (typeof (global as any).focusNotMusicWindow === 'function') {
+    (global as any).focusNotMusicWindow();
+  }
+  res.json({ ok: true });
 });
 
 // 5. Autocomplete suggestions endpoint
@@ -473,6 +534,54 @@ app.get('/api/downloads', (_req: Request, res: Response) => {
   res.json({ downloads: verified });
 });
 
+// Resolve yt-dlp path dynamically across common Python installations and PATH
+function findYtDlp(): string {
+  const localAppData = process.env.LOCALAPPDATA || '';
+  const appData = process.env.APPDATA || '';
+  const programFiles = process.env.ProgramFiles || 'C:\\Program Files';
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+
+  const candidatePaths: string[] = [
+    // Python Scripts directories in LocalAppData
+    path.join(localAppData, 'Programs', 'Python', 'Python314', 'Scripts', 'yt-dlp.exe'),
+    path.join(localAppData, 'Programs', 'Python', 'Python313', 'Scripts', 'yt-dlp.exe'),
+    path.join(localAppData, 'Programs', 'Python', 'Python312', 'Scripts', 'yt-dlp.exe'),
+    path.join(localAppData, 'Programs', 'Python', 'Python311', 'Scripts', 'yt-dlp.exe'),
+    path.join(localAppData, 'Programs', 'Python', 'Python310', 'Scripts', 'yt-dlp.exe'),
+    path.join(appData, 'Python', 'Python314', 'Scripts', 'yt-dlp.exe'),
+    path.join(appData, 'Python', 'Python313', 'Scripts', 'yt-dlp.exe'),
+    path.join(appData, 'Python', 'Python312', 'Scripts', 'yt-dlp.exe'),
+    path.join(programFiles, 'yt-dlp', 'yt-dlp.exe'),
+    path.join(programFilesX86, 'yt-dlp', 'yt-dlp.exe'),
+    path.join(currentDir, 'yt-dlp.exe'),
+    path.join(currentDir, '../bin/yt-dlp.exe'),
+  ];
+
+  // Scan PATH environment variable
+  if (process.env.PATH) {
+    const pathDirs = process.env.PATH.split(path.delimiter);
+    for (const dir of pathDirs) {
+      const cleanDir = dir.trim();
+      if (cleanDir) {
+        candidatePaths.push(path.join(cleanDir, 'yt-dlp.exe'));
+        candidatePaths.push(path.join(cleanDir, 'yt-dlp'));
+      }
+    }
+  }
+
+  for (const candidate of candidatePaths) {
+    try {
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    } catch {
+      // Ignore filesystem access errors
+    }
+  }
+
+  return 'yt-dlp';
+}
+
 // 7. Download a track to disk permanently
 app.post('/api/download', async (req: Request, res: Response) => {
   const { track } = req.body;
@@ -500,7 +609,110 @@ app.post('/api/download', async (req: Request, res: Response) => {
       return res.json({ success: true, audioUrl: `/api/download-file/${filename}`, sizeBytes: stats.size });
     }
 
-    // A) If track has previewUrl: download it directly
+    // Resolve YouTube video ID to download full-length audio (instead of 30s preview)
+    let ytId = track.youtubeId;
+    if (!ytId && track.title) {
+      ytId = await resolveYouTubeId(track.title, track.artist || '');
+    }
+
+    if (ytId) {
+      const ytDlpPath = findYtDlp();
+      const outputTemplate = path.join(downloadsDir, `${cleanId}.%(ext)s`);
+
+      const child = spawn(ytDlpPath, [
+        '-x',
+        '--audio-format', 'mp3',
+        '--audio-quality', '0',
+        '-o', outputTemplate,
+        `https://www.youtube.com/watch?v=${ytId}`
+      ], { windowsHide: true });
+
+      let responseSent = false;
+
+      // Handle spawn/process errors safely to prevent crashing Node
+      child.on('error', async (err) => {
+        console.error('yt-dlp spawn error:', err);
+        if (responseSent) return;
+
+        // Fallback to previewUrl only if full download process fails and previewUrl exists
+        if (track.previewUrl) {
+          try {
+            const resp = await fetch(track.previewUrl);
+            if (resp.ok) {
+              const buffer = await resp.arrayBuffer();
+              fs.writeFileSync(targetPath, Buffer.from(buffer));
+              responseSent = true;
+              const stats = fs.statSync(targetPath);
+              const list = getDownloadsManifest().filter(i => i.track.id !== track.id);
+              list.unshift({
+                track,
+                filename,
+                audioUrl: `/api/download-file/${filename}`,
+                sizeBytes: stats.size,
+                downloadedAt: new Date().toISOString(),
+              });
+              saveDownloadsManifest(list);
+              return res.json({ success: true, audioUrl: `/api/download-file/${filename}`, sizeBytes: stats.size });
+            }
+          } catch (fetchErr) {
+            console.error('Fallback preview download error:', fetchErr);
+          }
+        }
+
+        responseSent = true;
+        return res.status(500).json({ error: `yt-dlp execution error: ${err.message}` });
+      });
+
+      child.on('close', async (code) => {
+        if (responseSent) return;
+
+        if (code === 0 && fs.existsSync(targetPath)) {
+          responseSent = true;
+          const stats = fs.statSync(targetPath);
+          const list = getDownloadsManifest().filter(i => i.track.id !== track.id);
+          list.unshift({
+            track,
+            filename,
+            audioUrl: `/api/download-file/${filename}`,
+            sizeBytes: stats.size,
+            downloadedAt: new Date().toISOString(),
+          });
+          saveDownloadsManifest(list);
+          return res.json({ success: true, audioUrl: `/api/download-file/${filename}`, sizeBytes: stats.size });
+        } else {
+          // If yt-dlp failed (e.g. non-zero exit code), fallback to previewUrl if available
+          if (track.previewUrl) {
+            try {
+              const resp = await fetch(track.previewUrl);
+              if (resp.ok) {
+                const buffer = await resp.arrayBuffer();
+                fs.writeFileSync(targetPath, Buffer.from(buffer));
+                responseSent = true;
+                const stats = fs.statSync(targetPath);
+                const list = getDownloadsManifest().filter(i => i.track.id !== track.id);
+                list.unshift({
+                  track,
+                  filename,
+                  audioUrl: `/api/download-file/${filename}`,
+                  sizeBytes: stats.size,
+                  downloadedAt: new Date().toISOString(),
+                });
+                saveDownloadsManifest(list);
+                return res.json({ success: true, audioUrl: `/api/download-file/${filename}`, sizeBytes: stats.size });
+              }
+            } catch (fallbackErr) {
+              console.error('Fallback preview download error:', fallbackErr);
+            }
+          }
+
+          responseSent = true;
+          return res.status(500).json({ error: 'Download failed' });
+        }
+      });
+      return;
+    }
+
+    // Fallback: If no YouTube audio could be resolved, check if previewUrl is available
     if (track.previewUrl) {
       const resp = await fetch(track.previewUrl);
       if (resp.ok) {
@@ -519,44 +731,6 @@ app.post('/api/download', async (req: Request, res: Response) => {
       }
     }
 
-    // B) If track has YouTube ID (or resolve one): use yt-dlp to download genuine audio!
-    let ytId = track.youtubeId;
-    if (!ytId) {
-      ytId = await resolveYouTubeId(track.title, track.artist);
-    }
-
-    if (ytId) {
-      const ytDlpPath = 'C:\\Users\\juste\\AppData\\Local\\Programs\\Python\\Python314\\Scripts\\yt-dlp.exe';
-      const outputTemplate = path.join(downloadsDir, `${cleanId}.%(ext)s`);
-
-      const child = spawn(ytDlpPath, [
-        '-x',
-        '--audio-format', 'mp3',
-        '--audio-quality', '0',
-        '-o', outputTemplate,
-        `https://www.youtube.com/watch?v=${ytId}`
-      ], { windowsHide: true });
-
-      child.on('close', (code) => {
-        if (code === 0 && fs.existsSync(targetPath)) {
-          const stats = fs.statSync(targetPath);
-          const list = getDownloadsManifest().filter(i => i.track.id !== track.id);
-          list.unshift({
-            track,
-            filename,
-            audioUrl: `/api/download-file/${filename}`,
-            sizeBytes: stats.size,
-            downloadedAt: new Date().toISOString(),
-          });
-          saveDownloadsManifest(list);
-          return res.json({ success: true, audioUrl: `/api/download-file/${filename}`, sizeBytes: stats.size });
-        } else {
-          return res.status(500).json({ error: 'Download failed' });
-        }
-      });
-      return;
-    }
-
     res.status(400).json({ error: 'Could not resolve audio stream for track' });
   } catch (err: any) {
     console.error('Download error:', err);
@@ -566,11 +740,13 @@ app.post('/api/download', async (req: Request, res: Response) => {
 
 // 8. Delete downloaded track from disk
 app.delete('/api/download/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
+  const rawId = req.params.id;
+  const id = Array.isArray(rawId) ? rawId[0] : String(rawId || '');
   const list = getDownloadsManifest();
   const item = list.find(i => i.track.id === id);
   if (item) {
-    const filePath = path.join(downloadsDir, item.filename);
+    const safeItemFilename = path.basename(item.filename);
+    const filePath = path.join(downloadsDir, safeItemFilename);
     if (fs.existsSync(filePath)) {
       try { fs.unlinkSync(filePath); } catch (e) {}
     }
@@ -582,8 +758,22 @@ app.delete('/api/download/:id', (req: Request, res: Response) => {
 
 // 9. Serve physical downloaded audio file
 app.get('/api/download-file/:filename', (req: Request, res: Response) => {
-  const { filename } = req.params;
-  const filePath = path.join(downloadsDir, filename);
+  const rawFilename = req.params.filename;
+  const filenameStr = Array.isArray(rawFilename) ? rawFilename[0] : String(rawFilename || '');
+  const cleanFilename = path.basename(filenameStr);
+
+  if (!cleanFilename) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const resolvedDownloadsDir = path.resolve(downloadsDir);
+  const filePath = path.resolve(resolvedDownloadsDir, cleanFilename);
+
+  // Prevent path traversal outside downloads directory
+  if (!filePath.startsWith(resolvedDownloadsDir)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);
   } else {
@@ -598,6 +788,14 @@ app.use((req: Request, res: Response, next) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[Music Backend] Server is running at http://localhost:${PORT}`);
+});
+
+server.on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`[Music Backend] Port ${PORT} already active, continuing.`);
+  } else {
+    console.error('[Music Backend] Server error:', err);
+  }
 });

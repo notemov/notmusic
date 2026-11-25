@@ -95,3 +95,22 @@ export async function getPersonalizedRecommendations(
     return [];
   }
 }
+
+export async function getUserDataApi(): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE}/user-data`);
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function saveUserDataApi(data: any): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/user-data`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch {}
+}

@@ -1,40 +1,51 @@
-# 🎵 NotMusic — Modern Masaüstü Müzik Çalar
-### Spotify • Apple Music • YouTube Music All-In-One
+# 🎵 NotMusic — Modern Masaüstü Müzik Oynatıcı
 
-**NotMusic**, Spotify, Apple Music ve YouTube'daki tüm müzikleri tek çatı altında reklamsız toplayan, şarkıları yerel diske çevrim dışı indirebilen ve arka planda kesintisiz çalışabilen modern bir masaüstü müzik uygulamasıdır.
+**NotMusic**, React, TypeScript ve Electron teknolojileriyle geliştirilmiş, sade ve hızlı bir açık kaynak Windows masaüstü müzik uygulamasıdır.
 
----
+## ✨ Özellikler
 
-## 🌟 Öne Çıkan Özellikler
+- **🎧 Çoklu Platform Keşfi:** Tek arayüzden Spotify listeleri, Apple Music dünya listeleri ve YouTube Music trendlerini keşfetme ve arama.
+- **📺 YouTube Video Modu:** Yalnızca YouTube kaynaklı parçalarda isteğe bağlı mini video oynatıcı desteği (Spotify ve Apple Music için saf ses odaklı deneyim).
+- **🎤 Senkronize Şarkı Sözleri (Lyrics):** LRCLIB API üzerinden canlı zaman damgalı şarkı sözleri ve söze tıklayarak saniyeye atlama.
+- **📊 Ses Spektrum Görselleştirici:** Çubuk, dalga ve döngü modlarıyla 60 FPS Canvas görselleştirici.
+- **🔊 Arka Planda Kesintisiz Oynatma:** Pencere kapatılsa (X) dahi Sistem Tepsisinde (System Tray) oynatmaya devam eder; medya tuşları desteklenir.
+- **❤️ Kitaplık & Yerel Depolama:** Beğenilen şarkılar, özel çalma listeleri, dinleme geçmişi ve çevrim dışı önbellek yönetimi.
+- **⏱️ Uyku Zamanlayıcısı & Kişiselleştirme:** Uygulama adı/logosu özelleştirme ve otomatik durdurma zamanlayıcısı.
 
-- **🎧 Çoklu Platform Entegrasyonu:** Spotify Türkiye & Dünya Top 50, Apple Music hitleri ve YouTube arama motoru tek ekranda.
-- **💾 Çevrim Dışı İndirme:** Şarkıları tek tıkla fiziksel olarak bilgisayara indirip internetsiz dinleme imkanı.
-- **🎵 Arka Planda Kesintisiz Çalma:** Pencereyi çarpıdan (X) kapatsanız bile müzik durmaz, sağ alttaki bildirim tepsisinde (System Tray) çalışmaya devam eder.
-- **⚡ Hızlı Geçiş & Önbellek (Prefetch):** Şarkı geçişlerinde anında önizleme ve bir sonraki şarkıyı önceden yükleme mekanizması.
-- **🎤 Senkronize Şarkı Sözleri & Spektrum:** Çalan şarkının sözlerini eşzamanlı takip etme ve 60 FPS ses görselleştirici.
-- **👤 Zahmetsiz Profil & Geçmiş:** Şifresiz, tek isimle profil, dinleme geçmişi ve dinleme alışkanlıklarına göre özel keşif önerileri.
-- **❤️ Favoriler & Çalma Listeleri:** İstediğiniz şarkıları favorilere ekleyin, özel listeler oluşturun.
+## 🛠️ Teknoloji Yığını
 
----
+- **Frontend:** React 19, TypeScript, Tailwind CSS v4, Vite, Lucide Icons
+- **Desktop:** Electron (Single-instance lock, System Tray, Global Media Shortcuts)
+- **Backend:** Express 5 (Yerel API ve önbellek yönetimi)
+- **Test:** Node.js Test Runner + TSX ile 4 katmanlı otomatik E2E doğrulama (`npm test`)
 
-## 🚀 Kurulum ve Çalıştırma (Geliştirici)
+## 🚀 Geliştirici Kurulumu
 
-Projeyi kendi bilgisayarınızda kaynak kodundan çalıştırmak için:
+Projeyi kaynak kodundan çalıştırmak için:
 
 ```bash
-# Bağımlılıkları yükleyin
+# 1. Depoyu klonlayın
+git clone https://github.com/notemov/notmusic.git
+cd notmusic
+
+# 2. Bağımlılıkları yükleyin
 npm install
 
-# Geliştirici modunda başlatın
+# 3. Geliştirici modunda başlatın
 npm run dev
 
-# Masaüstü uygulaması (Electron) olarak derleyip çalıştırın
+# 4. Üretim derlemesi & masaüstü penceresi
 npm run build
 npx electron electron/main.cjs
+
+# 5. Otomatik testleri çalıştırın
+npm test
 ```
 
----
+## 📦 Windows Kurulumu (Son Kullanıcılar)
 
-## 📦 Taşınabilir Sürüm (Portable)
+Hazır Windows kurulum dosyasını [Releases (Sürümler)](https://github.com/notemov/notmusic/releases) sayfasından indirebilirsiniz (`NotMusic_Kurulum.exe`).
 
-Son kullanıcılar için Node.js veya kurulum gerektirmeyen hazır paket hazırlanabilir. `electron.exe` ve paketlenmiş kaynak dosyalarıyla tek tıkla çalışır.
+## 📄 Lisans
+
+Bu proje [MIT Lisansı](LICENSE) altında açık kaynak olarak sunulmaktadır.

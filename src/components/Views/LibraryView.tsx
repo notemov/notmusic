@@ -6,7 +6,7 @@ import {
   Play, 
   Plus, 
   Trash2, 
-  FolderPlus 
+  FolderPlus
 } from 'lucide-react';
 import { usePlayer } from '../../context/PlayerContext';
 import { TrackList } from '../TrackList';
@@ -19,7 +19,7 @@ export const LibraryView: React.FC = () => {
     openPlaylist, 
     createPlaylist, 
     playTrack,
-    deletePlaylist 
+    deletePlaylist
   } = usePlayer();
   const history = historyItems.map(h => h.track);
   const [activeTab, setActiveTab] = useState<'liked' | 'playlists' | 'history'>('liked');
@@ -125,13 +125,15 @@ export const LibraryView: React.FC = () => {
             <span className="text-xs font-semibold text-neutral-400">
               Oluşturulan Çalma Listeleri
             </span>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold flex items-center gap-2 shadow-md hover:scale-105 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Yeni Liste Oluştur</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowModal(true)}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold flex items-center gap-2 shadow-md hover:scale-105 transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Yeni Liste Oluştur</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">

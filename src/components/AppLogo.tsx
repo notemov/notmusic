@@ -13,17 +13,17 @@ export const AppLogo: React.FC<AppLogoProps> = ({ size = 'md', className = '', s
   const icon = appSettings.appIcon;
 
   const sizeClasses = {
-    sm: 'w-7 h-7 rounded-lg',
-    md: 'w-10 h-10 rounded-xl',
-    lg: 'w-14 h-14 rounded-2xl',
-    xl: 'w-20 h-20 rounded-3xl',
+    sm: 'w-8 h-8 rounded-xl',
+    md: 'w-12 h-12 rounded-2xl',
+    lg: 'w-16 h-16 rounded-2xl',
+    xl: 'w-24 h-24 rounded-3xl',
   };
 
   const iconSizes = {
     sm: 'w-4 h-4',
-    md: 'w-5 h-5',
-    lg: 'w-7 h-7',
-    xl: 'w-10 h-10',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8',
+    xl: 'w-12 h-12',
   };
 
   // If preset icon chosen other than official
@@ -62,7 +62,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ size = 'md', className = '', s
       <img
         src="/logo.png"
         alt="NotMusic Logo"
-        className="w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-300"
+        className="w-full h-full object-contain p-0.5 group-hover:scale-105 transition-transform duration-300"
       />
     </div>
   );

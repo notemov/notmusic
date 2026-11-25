@@ -1,7 +1,6 @@
 import React from 'react';
-import { Play, ArrowLeft, Trash2, Clock, Music } from 'lucide-react';
+import { Play, ArrowLeft, Trash2, Music } from 'lucide-react';
 import { usePlayer } from '../../context/PlayerContext';
-import { Track } from '../../types';
 
 export const PlaylistDetailView: React.FC = () => {
   const { 
@@ -9,9 +8,7 @@ export const PlaylistDetailView: React.FC = () => {
     setActiveView, 
     playTrack, 
     currentTrack, 
-    isPlaying, 
-    togglePlay, 
-    removeTrackFromPlaylist 
+    removeTrackFromPlaylist
   } = usePlayer();
 
   if (!selectedPlaylist) {
@@ -38,7 +35,7 @@ export const PlaylistDetailView: React.FC = () => {
       {/* Back button */}
       <button
         onClick={() => setActiveView('library')}
-        className="flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors"
+        className="flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Kitaplığa Dön</span>
@@ -65,11 +62,11 @@ export const PlaylistDetailView: React.FC = () => {
             {selectedPlaylist.description || 'Özel çalma listesi'} • {selectedPlaylist.tracks.length} parça
           </p>
 
-          <div className="pt-2">
+          <div className="pt-2 flex items-center gap-3 flex-wrap">
             <button
               onClick={handlePlayAll}
               disabled={selectedPlaylist.tracks.length === 0}
-              className="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-40"
+              className="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
             >
               <Play className="w-4 h-4 fill-black" />
               <span>Çalma Listesini Başlat</span>

@@ -2,13 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
   X, 
-  Mic2, 
-  Activity, 
   Tv, 
   Settings, 
-  Palette, 
-  Clock, 
-  User 
+  Clock
 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { getSuggestions } from '../services/api';
@@ -22,17 +18,12 @@ export const Navbar: React.FC = () => {
     setActiveView,
     activeSourceTab,
     setActiveSourceTab,
-    isLyricsOpen,
-    setIsLyricsOpen,
-    isVisualizerOpen,
-    setIsVisualizerOpen,
+    currentTrack,
     isVideoOpen,
     setIsVideoOpen,
     setIsSettingsOpen,
     setIsProfileOpen,
     userProfile,
-    appSettings,
-    updateSettings,
     sleepTimerRemaining
   } = usePlayer();
 
@@ -83,17 +74,21 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const cycleTheme = () => {
-    const themes = ['dark', 'light', 'cyberpunk', 'spotify', 'apple', 'ocean'] as const;
-    const currentIdx = themes.indexOf(appSettings.theme);
-    const nextTheme = themes[(currentIdx + 1) % themes.length];
-    updateSettings({ theme: nextTheme });
+  const handleSourceSwitch = (tab: 'all' | 'spotify' | 'apple' | 'youtube') => {
+    setActiveSourceTab(tab);
+    // Platform sekmeleri tıklandığında ilgili içeriği hemen görmek için Home/Search/Charts görünümüne geç
+    if (activeView !== 'home' && activeView !== 'search' && activeView !== 'charts') {
+      setActiveView(searchQuery.trim() ? 'search' : 'home');
+    }
   };
 
+  // Video modu YALNIZCA YouTube sekmesinde görünür olsun
+  const canShowNavbarVideo = activeSourceTab === 'youtube';
+
   return (
-    <header className="h-16 px-6 bg-[#0c0c12]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between gap-4 z-10 select-none">
-      {/* Search Input Bar with autocomplete */}
-      <div className="flex items-center gap-3 flex-1 max-w-xl">
+    <header className="h-16 px-6 bg-[#0c0c12]/90 backdrop-blur-xl border-b border-white/5 flex items-center justify-between gap-4 z-20 select-none">
+      {/* Search Input Bar */}
+      <div className="flex items-center gap-3 flex-1 max-w-md min-w-[220px]">
         <div className="relative flex-1" ref={dropdownRef}>
           <div className="relative flex items-center">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none" />
@@ -106,7 +101,7 @@ export const Navbar: React.FC = () => {
               }}
               onFocus={() => setShowDropdown(true)}
               onKeyDown={handleKeyDown}
-              placeholder="Şarkı, sanatçı, albüm veya YouTube videosu ara..."
+              placeholder="Şarkı, sanatçı veya albüm ara..."
               className="w-full bg-white/[0.06] hover:bg-white/[0.09] focus:bg-white/[0.12] text-sm text-white placeholder-neutral-400 pl-10 pr-9 py-2 rounded-full border border-white/10 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200"
             />
             {inputVal && (
@@ -125,23 +120,25 @@ export const Navbar: React.FC = () => {
 
           {/* Autocomplete Suggestions Dropdown */}
           {showDropdown && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 py-2 glass-dropdown rounded-2xl shadow-2xl z-50">
-              <div className="px-3 py-1 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+            <div className="absolute top-full left-0 right-0 mt-2 py-2 bg-[#12121a] border border-white/15 rounded-2xl shadow-2xl z-50 overflow-hidden backdrop-blur-3xl">
+              <div className="px-3 py-1.5 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider border-b border-white/5">
                 Önerilen Aramalar
               </div>
-              {suggestions.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    setInputVal(item);
-                    handleSearchSubmit(item);
-                  }}
-                  className="px-4 py-2 text-sm text-neutral-300 hover:text-white hover:bg-white/10 cursor-pointer flex items-center gap-2.5 transition-colors"
-                >
-                  <Search className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>{item}</span>
-                </div>
-              ))}
+              <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                {suggestions.map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      setInputVal(item);
+                      handleSearchSubmit(item);
+                    }}
+                    className="px-4 py-2.5 text-sm text-neutral-200 hover:text-white hover:bg-emerald-500/15 cursor-pointer flex items-center gap-2.5 transition-colors"
+                  >
+                    <Search className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -150,46 +147,46 @@ export const Navbar: React.FC = () => {
       {/* Platform Tabs Filter */}
       <div className="hidden lg:flex items-center bg-white/[0.04] p-1 rounded-xl border border-white/5">
         <button
-          onClick={() => setActiveSourceTab('all')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+          onClick={() => handleSourceSwitch('all')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
             activeSourceTab === 'all'
               ? 'bg-white text-black shadow-md'
               : 'text-neutral-400 hover:text-white'
           }`}
         >
-          Tümü (All)
+          Tümü
         </button>
         <button
-          onClick={() => setActiveSourceTab('spotify')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${
+          onClick={() => handleSourceSwitch('spotify')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 cursor-pointer ${
             activeSourceTab === 'spotify'
               ? 'bg-emerald-500 text-black shadow-md shadow-emerald-500/30'
               : 'text-neutral-400 hover:text-emerald-400'
           }`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span className={`w-1.5 h-1.5 rounded-full ${activeSourceTab === 'spotify' ? 'bg-black' : 'bg-emerald-400'}`}></span>
           Spotify
         </button>
         <button
-          onClick={() => setActiveSourceTab('apple')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${
+          onClick={() => handleSourceSwitch('apple')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 cursor-pointer ${
             activeSourceTab === 'apple'
               ? 'bg-pink-500 text-white shadow-md shadow-pink-500/30'
               : 'text-neutral-400 hover:text-pink-400'
           }`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
+          <span className={`w-1.5 h-1.5 rounded-full ${activeSourceTab === 'apple' ? 'bg-white' : 'bg-pink-400'}`}></span>
           Apple Music
         </button>
         <button
-          onClick={() => setActiveSourceTab('youtube')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${
+          onClick={() => handleSourceSwitch('youtube')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 cursor-pointer ${
             activeSourceTab === 'youtube'
               ? 'bg-red-500 text-white shadow-md shadow-red-500/30'
               : 'text-neutral-400 hover:text-red-400'
           }`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+          <span className={`w-1.5 h-1.5 rounded-full ${activeSourceTab === 'youtube' ? 'bg-white' : 'bg-red-400'}`}></span>
           YouTube Music
         </button>
       </div>
@@ -208,53 +205,31 @@ export const Navbar: React.FC = () => {
           </div>
         )}
 
-        {/* Lyrics Toggle */}
-        <button
-          onClick={() => setIsLyricsOpen(!isLyricsOpen)}
-          title="Şarkı Sözleri (L)"
-          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
-            isLyricsOpen
-              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
-              : 'bg-white/5 text-neutral-400 border-white/5 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <Mic2 className="w-3.5 h-3.5" />
-          <span>Sözler</span>
-        </button>
-
-        {/* Visualizer Toggle */}
-        <button
-          onClick={() => setIsVisualizerOpen(!isVisualizerOpen)}
-          title="Ses Spektrum Görselleştirici (V)"
-          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
-            isVisualizerOpen
-              ? 'bg-violet-500/20 text-violet-400 border-violet-500/40 shadow-sm'
-              : 'bg-white/5 text-neutral-400 border-white/5 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <Activity className="w-3.5 h-3.5" />
-          <span>Spektrum</span>
-        </button>
-
-        {/* Video Mode Toggle */}
-        <button
-          onClick={() => setIsVideoOpen(!isVideoOpen)}
-          title="Klip / Video Modu"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
-            isVideoOpen
-              ? 'bg-red-500/20 text-red-400 border-red-500/40 shadow-sm'
-              : 'bg-white/5 text-neutral-400 border-white/5 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <Tv className="w-3.5 h-3.5" />
-          <span>Video</span>
-        </button>
+        {/* Video Mode Toggle - Strictly only shown on YouTube Music tab */}
+        {canShowNavbarVideo && (
+          <button
+            onClick={() => setIsVideoOpen(!isVideoOpen)}
+            title={
+              currentTrack?.source === 'youtube'
+                ? 'Klip / Video Modu'
+                : 'Video izlemek için bir YouTube parçası başlatın'
+            }
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+              isVideoOpen
+                ? 'bg-red-500/20 text-red-400 border-red-500/40 shadow-sm'
+                : 'bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5 text-red-400" />
+            <span>Video</span>
+          </button>
+        )}
 
         {/* Settings Button */}
         <button
           onClick={() => setIsSettingsOpen(true)}
-          title="Ayarlar & Temalar"
-          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
+          title="Ayarlar"
+          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
         >
           <Settings className="w-4 h-4" />
         </button>
@@ -262,10 +237,11 @@ export const Navbar: React.FC = () => {
         {/* User Profile Pill */}
         <div
           onClick={() => setIsProfileOpen(true)}
-          className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer transition-colors"
+          className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-colors"
+          title={`Profil: ${userProfile.name}`}
         >
           <UserAvatar size="sm" />
-          <span className="text-xs font-bold text-white max-w-[90px] truncate">
+          <span className="text-xs font-bold text-white max-w-[100px] truncate">
             {userProfile.name}
           </span>
         </div>
