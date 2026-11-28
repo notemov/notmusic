@@ -13,6 +13,7 @@ import {
   getUserDataApi, 
   saveUserDataApi
 } from '../services/api';
+import { getOfflineAudioUrl } from '../services/offlineStorage';
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -504,11 +505,27 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ...prev.filter(h => h.track.id !== track.id),
     ].slice(0, 100));
 
-    // Offline downloaded MP3 playback path (local file, no YouTube resolution needed)
-    if (track.previewUrl?.startsWith('/api/download-file/')) {
+    // Offline downloaded MP3 / IndexedDB Blob playback path (local file, no internet needed)
+    if (track.previewUrl?.startsWith('/api/download-file/') || track.previewUrl?.startsWith('blob:')) {
       if (ytPlayerRef.current && typeof ytPlayerRef.current.stopVideo === 'function') {
         try { ytPlayerRef.current.stopVideo(); } catch {}
       }
+      setCurrentYoutubeId(null);
+      setIsPlaying(true);
+      setIsLoadingTrack(false);
+      return;
+    }
+
+    // Check if track was previously downloaded offline before streaming
+    const targetTrackId = track.id;
+    const offlineLocalUrl = await getOfflineAudioUrl(track.id);
+    if (currentTrackRef.current?.id !== targetTrackId) return;
+    if (offlineLocalUrl) {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.stopVideo === 'function') {
+        try { ytPlayerRef.current.stopVideo(); } catch {}
+      }
+      setCurrentTrack({ ...track, previewUrl: offlineLocalUrl });
+      currentTrackRef.current = { ...track, previewUrl: offlineLocalUrl };
       setCurrentYoutubeId(null);
       setIsPlaying(true);
       setIsLoadingTrack(false);
@@ -528,7 +545,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // Fast-path 2: Resolve full-length stream in background (prevent double playback & race condition)
-    const targetTrackId = track.id;
     resolveYouTubeId(track.title, track.artist).then(resolvedId => {
       if (currentTrackRef.current?.id !== targetTrackId) return; // user switched tracks
 

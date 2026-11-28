@@ -59,9 +59,9 @@ export const DownloadsView: React.FC = () => {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto pb-32">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto pb-32">
       {/* Hero Header */}
-      <div className="relative rounded-3xl overflow-hidden p-8 md:p-10 bg-gradient-to-r from-blue-900/60 via-indigo-900/40 to-cyan-900/40 border border-white/10 shadow-2xl">
+      <div className="relative rounded-3xl overflow-hidden p-5 md:p-10 bg-gradient-to-r from-blue-900/60 via-indigo-900/40 to-cyan-900/40 border border-white/10 shadow-2xl">
         <div className="space-y-4 max-w-2xl relative z-10">
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">

@@ -6,7 +6,8 @@ import {
   Play, 
   Plus, 
   Trash2, 
-  FolderPlus
+  FolderPlus,
+  DownloadCloud
 } from 'lucide-react';
 import { usePlayer } from '../../context/PlayerContext';
 import { TrackList } from '../TrackList';
@@ -19,7 +20,8 @@ export const LibraryView: React.FC = () => {
     openPlaylist, 
     createPlaylist, 
     playTrack,
-    deletePlaylist
+    deletePlaylist,
+    setActiveView
   } = usePlayer();
   const history = historyItems.map(h => h.track);
   const [activeTab, setActiveTab] = useState<'liked' | 'playlists' | 'history'>('liked');
@@ -83,6 +85,14 @@ export const LibraryView: React.FC = () => {
           >
             <History className="w-3.5 h-3.5" />
             <span>Geçmiş ({history.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('downloads')}
+            className="flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500 hover:text-black border border-cyan-500/20"
+          >
+            <DownloadCloud className="w-3.5 h-3.5" />
+            <span>İndirilenler</span>
           </button>
         </div>
       </div>

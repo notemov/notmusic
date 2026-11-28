@@ -1,7 +1,8 @@
 import React from 'react';
-import { Play, Pause, Heart, Clock, Plus, MoreHorizontal } from 'lucide-react';
+import { Play, Pause, Heart, Clock, Plus, ListPlus, DownloadCloud, Check, X } from 'lucide-react';
 import { Track } from '../types';
 import { usePlayer } from '../context/PlayerContext';
+import { saveOfflineTrack } from '../services/offlineStorage';
 
 interface TrackListProps {
   tracks: Track[];
@@ -16,12 +17,15 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, showAlbum = true }
     togglePlay,
     isLiked,
     toggleLike,
-    addToQueue,
     playlists,
-    addTrackToPlaylist
+    addTrackToPlaylist,
+    createPlaylist,
+    showToast
   } = usePlayer();
 
-  const [activeMenuId, setActiveMenuId] = React.useState<string | null>(null);
+  const [pickerTrack, setPickerTrack] = React.useState<Track | null>(null);
+  const [newPlName, setNewPlName] = React.useState('');
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
 
   const getSourceBadge = (source: string) => {
     if (source === 'spotify') {
@@ -124,21 +128,51 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, showAlbum = true }
               {/* Source Badge */}
               <div className="hidden md:block">{getSourceBadge(track.source)}</div>
 
-              {/* Duration & Like */}
-              <div className="flex items-center justify-end gap-2 md:gap-3 text-xs text-neutral-400 shrink-0">
+              {/* Duration, Playlist, Download & Like */}
+              <div className="flex items-center justify-end gap-1 md:gap-2 text-xs text-neutral-400 shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPickerTrack(track);
+                  }}
+                  title="Çalma Listesine Ekle"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                >
+                  <ListPlus className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (downloadingId === track.id) return;
+                    setDownloadingId(track.id);
+                    showToast(`"${track.title}" indiriliyor...`);
+                    const ok = await saveOfflineTrack(track);
+                    setDownloadingId(null);
+                    if (ok) showToast(`"${track.title}" çevrim dışı indirildi!`);
+                    else showToast(`"${track.title}" indirilemedi.`);
+                  }}
+                  title="Çevrim Dışı İndir"
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    downloadingId === track.id ? 'text-cyan-400 animate-pulse' : 'text-neutral-400 hover:text-cyan-400 hover:bg-cyan-500/10'
+                  }`}
+                >
+                  <DownloadCloud className="w-3.5 h-3.5" />
+                </button>
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleLike(track);
                   }}
-                  className={`md:opacity-0 md:group-hover:opacity-100 transition-opacity ${
-                    isLiked(track.id) ? 'opacity-100 text-pink-500' : 'text-neutral-500 hover:text-white'
+                  className={`p-1.5 rounded-lg transition-opacity cursor-pointer ${
+                    isLiked(track.id) ? 'text-pink-500' : 'text-neutral-400 hover:text-white'
                   }`}
                 >
                   <Heart className={`w-3.5 h-3.5 ${isLiked(track.id) ? 'fill-pink-500' : ''}`} />
                 </button>
 
-                <span className="font-mono w-9 md:w-10 text-right">
+                <span className="font-mono w-9 md:w-10 text-right hidden sm:inline">
                   {track.duration || '3:30'}
                 </span>
               </div>
@@ -146,6 +180,85 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, showAlbum = true }
           );
         })}
       </div>
+
+      {/* Playlist Picker Modal */}
+      {pickerTrack && (
+        <div
+          onClick={() => setPickerTrack(null)}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#14141e] border border-white/10 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <ListPlus className="w-4 h-4 text-emerald-400" />
+                  Çalma Listesine Ekle
+                </h3>
+                <p className="text-xs text-neutral-400 truncate mt-0.5">{pickerTrack.title}</p>
+              </div>
+              <button
+                onClick={() => setPickerTrack(null)}
+                className="p-1 text-neutral-400 hover:text-white rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="max-h-56 overflow-y-auto space-y-1.5">
+              {playlists.map(pl => {
+                const alreadyIn = pl.tracks.some(t => t.id === pickerTrack.id);
+                return (
+                  <button
+                    key={pl.id}
+                    onClick={() => {
+                      addTrackToPlaylist(pl.id, pickerTrack);
+                      setPickerTrack(null);
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-emerald-500/15 border border-white/5 hover:border-emerald-500/30 text-left transition-colors cursor-pointer"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{pl.name}</p>
+                      <p className="text-[10px] text-neutral-400">{pl.tracks.length} parça</p>
+                    </div>
+                    {alreadyIn ? (
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <Plus className="w-4 h-4 text-neutral-400 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newPlName.trim()) return;
+                createPlaylist(newPlName.trim());
+                setNewPlName('');
+              }}
+              className="flex gap-2 pt-2 border-t border-white/5"
+            >
+              <input
+                type="text"
+                value={newPlName}
+                onChange={(e) => setNewPlName(e.target.value)}
+                placeholder="Yeni liste adı..."
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
+              />
+              <button
+                type="submit"
+                className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold cursor-pointer"
+              >
+                Oluştur
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
