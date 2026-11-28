@@ -143,6 +143,47 @@ export const Player: React.FC = () => {
     };
   }, [currentYoutubeId, currentTrack?.id]);
 
+  // Android Native Background Service + Web MediaSession API (Kilit ekranı & arka plan)
+  useEffect(() => {
+    const nativeBridge = (window as any).NotMusicNative;
+    if (Capacitor.isNativePlatform() && nativeBridge) {
+      try {
+        if (currentTrack && isPlaying) {
+          nativeBridge.startBackgroundPlayback(currentTrack.title, currentTrack.artist);
+        } else if (!isPlaying) {
+          nativeBridge.stopBackgroundPlayback();
+        }
+      } catch {}
+    }
+
+    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator && currentTrack) {
+      try {
+        const MediaMeta = (window as any).MediaMetadata;
+        if (MediaMeta) {
+          navigator.mediaSession.metadata = new MediaMeta({
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            album: currentTrack.album || 'NotMusic',
+            artwork: currentTrack.coverUrl
+              ? [{ src: currentTrack.coverUrl, sizes: '512x512', type: 'image/jpeg' }]
+              : [],
+          });
+        }
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+        navigator.mediaSession.setActionHandler('play', () => {
+          userPausedRef.current = false;
+          togglePlay();
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          userPausedRef.current = true;
+          togglePlay();
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => playNextRef.current());
+        navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
+      } catch {}
+    }
+  }, [currentTrack?.id, currentTrack?.title, currentTrack?.artist, currentTrack?.coverUrl, isPlaying]);
+
   // Initialize YouTube Iframe API
   useEffect(() => {
     if (!window.YT) {
