@@ -86,9 +86,10 @@ export const Navbar: React.FC = () => {
   const canShowNavbarVideo = activeSourceTab === 'youtube';
 
   return (
-    <header className="h-16 px-6 bg-[#0c0c12]/90 backdrop-blur-xl border-b border-white/5 flex items-center justify-between gap-4 z-20 select-none">
+    <div className="shrink-0 bg-[#0c0c12]/90 backdrop-blur-xl border-b border-white/5 z-20 select-none pt-[env(safe-area-inset-top)]">
+    <header className="h-14 md:h-16 px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4">
       {/* Search Input Bar */}
-      <div className="flex items-center gap-3 flex-1 max-w-md min-w-[220px]">
+      <div className="flex items-center gap-2 md:gap-3 flex-1 max-w-md min-w-0">
         <div className="relative flex-1" ref={dropdownRef}>
           <div className="relative flex items-center">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none" />
@@ -237,15 +238,63 @@ export const Navbar: React.FC = () => {
         {/* User Profile Pill */}
         <div
           onClick={() => setIsProfileOpen(true)}
-          className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-colors"
+          className="flex items-center gap-2 p-1 sm:pl-2 sm:pr-3 sm:py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer transition-colors shrink-0"
           title={`Profil: ${userProfile.name}`}
         >
           <UserAvatar size="sm" />
-          <span className="text-xs font-bold text-white max-w-[100px] truncate">
+          <span className="hidden sm:inline text-xs font-bold text-white max-w-[100px] truncate">
             {userProfile.name}
           </span>
         </div>
       </div>
     </header>
+
+    {/* Mobile Platform Tabs Filter */}
+    <div className="lg:hidden px-3 pb-2.5 flex items-center gap-1.5 overflow-x-auto">
+      <button
+        onClick={() => handleSourceSwitch('all')}
+        className={`px-3 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+          activeSourceTab === 'all'
+            ? 'bg-white text-black shadow-sm'
+            : 'bg-white/[0.04] text-neutral-400 hover:text-white'
+        }`}
+      >
+        Tümü
+      </button>
+      <button
+        onClick={() => handleSourceSwitch('spotify')}
+        className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+          activeSourceTab === 'spotify'
+            ? 'bg-emerald-500 text-black shadow-sm'
+            : 'bg-white/[0.04] text-neutral-400 hover:text-emerald-400'
+        }`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${activeSourceTab === 'spotify' ? 'bg-black' : 'bg-emerald-400'}`}></span>
+        Spotify
+      </button>
+      <button
+        onClick={() => handleSourceSwitch('apple')}
+        className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+          activeSourceTab === 'apple'
+            ? 'bg-pink-500 text-white shadow-sm'
+            : 'bg-white/[0.04] text-neutral-400 hover:text-pink-400'
+        }`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${activeSourceTab === 'apple' ? 'bg-white' : 'bg-pink-400'}`}></span>
+        Apple Music
+      </button>
+      <button
+        onClick={() => handleSourceSwitch('youtube')}
+        className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+          activeSourceTab === 'youtube'
+            ? 'bg-red-500 text-white shadow-sm'
+            : 'bg-white/[0.04] text-neutral-400 hover:text-red-400'
+        }`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${activeSourceTab === 'youtube' ? 'bg-white' : 'bg-red-400'}`}></span>
+        YouTube Music
+      </button>
+    </div>
+    </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { PlayerProvider, usePlayer } from './context/PlayerContext';
-import { Sidebar } from './components/Sidebar';
+import { Sidebar, MobileBottomNav } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { Player } from './components/Player';
 import { QueueDrawer } from './components/QueueDrawer';
@@ -148,6 +148,9 @@ const MainApp: React.FC = () => {
 
         {/* Bottom Unified Player */}
         <Player />
+
+        {/* Mobile Bottom Navigation */}
+        <MobileBottomNav />
       </div>
     </div>
   );

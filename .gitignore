@@ -10,6 +10,11 @@ data/
 downloads/*.mp3
 downloads/*.m4a
 downloads/*.webm
+android/app/build/
+android/.gradle/
+android/build/
+*.apk
+
 
 # Logs & temp
 npm-debug.log*

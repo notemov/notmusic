@@ -1,4 +1,13 @@
+import { Capacitor } from '@capacitor/core';
 import { Track } from '../types';
+
+const isNative = (): boolean => {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+};
 
 export interface OfflineTrackItem {
   track: Track;
@@ -9,6 +18,7 @@ export interface OfflineTrackItem {
 }
 
 export async function saveOfflineTrack(track: Track): Promise<boolean> {
+  if (isNative()) return false;
   try {
     const res = await fetch('/api/download', {
       method: 'POST',
@@ -24,6 +34,7 @@ export async function saveOfflineTrack(track: Track): Promise<boolean> {
 }
 
 export async function getOfflineTracks(): Promise<{ track: Track; downloadedAt: string; sizeBytes: number; audioUrl: string }[]> {
+  if (isNative()) return [];
   try {
     const res = await fetch('/api/downloads');
     const data = await res.json();
@@ -54,6 +65,7 @@ export async function isTrackDownloaded(trackId: string): Promise<boolean> {
 }
 
 export async function deleteOfflineTrack(trackId: string): Promise<boolean> {
+  if (isNative()) return false;
   try {
     const res = await fetch(`/api/download/${encodeURIComponent(trackId)}`, {
       method: 'DELETE',

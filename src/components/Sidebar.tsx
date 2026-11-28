@@ -49,7 +49,7 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-[#0f0f15]/95 border-r border-white/5 flex flex-col h-full select-none z-20 transition-colors">
+    <aside className="hidden md:flex w-64 bg-[#0f0f15]/95 border-r border-white/5 flex-col h-full select-none z-20 transition-colors">
       {/* Dynamic Brand Header */}
       <div 
         onClick={handleGoHome}
@@ -264,5 +264,37 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
     </aside>
+  );
+};
+
+export const MobileBottomNav: React.FC = () => {
+  const { activeView, setActiveView } = usePlayer();
+
+  const items: { id: 'home' | 'search' | 'recommendations' | 'charts' | 'library'; label: string; icon: React.ReactNode }[] = [
+    { id: 'home', label: 'Ana Sayfa', icon: <Home className="w-5 h-5" /> },
+    { id: 'search', label: 'Ara', icon: <Search className="w-5 h-5" /> },
+    { id: 'recommendations', label: 'Sana Özel', icon: <Sparkles className="w-5 h-5" /> },
+    { id: 'charts', label: 'Listeler', icon: <Flame className="w-5 h-5" /> },
+    { id: 'library', label: 'Kitaplık', icon: <Disc3 className="w-5 h-5" /> },
+  ];
+
+  return (
+    <nav className="md:hidden shrink-0 bg-[#0c0c12]/95 backdrop-blur-xl border-t border-white/10 px-1 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around z-40 select-none">
+      {items.map(item => {
+        const isActive = activeView === item.id || (item.id === 'library' && (activeView === 'liked' || activeView === 'playlists' || activeView === 'playlist' || activeView === 'history' || activeView === 'downloads'));
+        return (
+          <button
+            key={item.id}
+            onClick={() => setActiveView(item.id)}
+            className={`flex flex-col items-center justify-center gap-0.5 px-2.5 py-1 rounded-xl transition-colors cursor-pointer ${
+              isActive ? 'text-emerald-400' : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            {item.icon}
+            <span className="text-[10px] font-semibold leading-tight">{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 };

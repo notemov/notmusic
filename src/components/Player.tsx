@@ -352,7 +352,7 @@ export const Player: React.FC = () => {
         style={showVideoWindow ? {} : { opacity: 0, pointerEvents: 'none', width: 1, height: 1 }}
         className={`fixed z-30 transition-all duration-300 rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black flex flex-col ${
           showVideoWindow
-            ? 'bottom-28 right-6 w-96 h-60 opacity-100 scale-100 pointer-events-auto'
+            ? 'bottom-36 left-3 right-3 sm:left-auto sm:bottom-28 sm:right-6 sm:w-96 h-52 sm:h-60 opacity-100 scale-100 pointer-events-auto'
             : 'bottom-0 right-0'
         }`}
       >
@@ -377,12 +377,12 @@ export const Player: React.FC = () => {
       </div>
 
       {/* Bottom Main Player Bar */}
-      <footer className="h-24 bg-[#0d0d14]/95 backdrop-blur-2xl border-t border-white/10 px-6 flex items-center justify-between select-none z-40 relative">
+      <footer className="h-auto py-2 px-3 md:py-0 md:h-24 md:px-6 bg-[#0d0d14]/95 backdrop-blur-2xl border-t border-white/10 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-1.5 select-none z-40 relative">
         {/* Left Track Info */}
-        <div className="flex items-center gap-4 w-1/4 min-w-[220px]">
+        <div className="flex items-center gap-2.5 md:gap-4 w-[58%] md:w-1/4 md:min-w-[220px] min-w-0">
           {currentTrack ? (
             <>
-              <div className="relative group w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-lg bg-neutral-900 border border-white/10">
+              <div className="relative group w-11 h-11 md:w-14 md:h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-lg bg-neutral-900 border border-white/10">
                 <img
                   src={currentTrack.coverUrl}
                   alt={currentTrack.title}
@@ -432,7 +432,7 @@ export const Player: React.FC = () => {
                     await saveOfflineTrack(currentTrack);
                     showToast(`"${currentTrack.title}" indirildi!`);
                   }}
-                  className="p-2 rounded-full text-neutral-500 hover:text-cyan-400 transition-colors cursor-pointer"
+                  className="hidden md:inline-flex p-2 rounded-full text-neutral-500 hover:text-cyan-400 transition-colors cursor-pointer"
                   title="Şarkıyı Çevrim Dışı İndir"
                 >
                   <DownloadCloud className="w-4 h-4" />
@@ -441,25 +441,25 @@ export const Player: React.FC = () => {
             </>
           ) : (
             <div className="flex items-center gap-3 text-neutral-500">
-              <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
+              <div className="w-11 h-11 md:w-14 md:h-14 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
                 <Sparkles className="w-5 h-5 text-neutral-600" />
               </div>
-              <div>
-                <p className="text-xs font-medium text-neutral-400">Şarkı seçilmedi</p>
-                <p className="text-[11px] text-neutral-600">Herhangi bir parçaya tıkla</p>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-neutral-400 truncate">Şarkı seçilmedi</p>
+                <p className="hidden sm:block text-[11px] text-neutral-600">Herhangi bir parçaya tıkla</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Center Controls & Timeline */}
-        <div className="flex flex-col items-center gap-2 flex-1 max-w-2xl px-4">
+        <div className="flex flex-col items-center gap-1 md:gap-2 order-3 md:order-2 w-full md:w-auto md:flex-1 md:max-w-2xl px-0 md:px-4">
           {/* Action buttons */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 md:gap-5">
             <button
               onClick={toggleShuffle}
               title={`Karışık Çalma: ${isShuffle ? 'Açık' : 'Kapalı'}`}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`hidden sm:inline-flex p-1.5 rounded-lg transition-colors cursor-pointer ${
                 isShuffle ? 'text-emerald-400' : 'text-neutral-500 hover:text-white'
               }`}
             >
@@ -479,7 +479,7 @@ export const Player: React.FC = () => {
               onClick={togglePlay}
               disabled={!currentTrack}
               title={isPlaying ? 'Durdur (Boşluk)' : 'Oynat (Boşluk)'}
-              className="w-11 h-11 rounded-full bg-white hover:scale-105 active:scale-95 text-black flex items-center justify-center shadow-lg shadow-white/10 transition-all duration-200 disabled:opacity-50 cursor-pointer"
+              className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white hover:scale-105 active:scale-95 text-black flex items-center justify-center shadow-lg shadow-white/10 transition-all duration-200 disabled:opacity-50 cursor-pointer"
             >
               {isLoadingTrack ? (
                 <Loader2 className="w-5 h-5 text-black animate-spin" />
@@ -502,7 +502,7 @@ export const Player: React.FC = () => {
             <button
               onClick={cycleRepeatMode}
               title={`Tekrar: ${repeatMode}`}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`hidden sm:inline-flex p-1.5 rounded-lg transition-colors cursor-pointer ${
                 repeatMode !== 'off'
                   ? 'text-emerald-400'
                   : 'text-neutral-500 hover:text-white'
@@ -540,7 +540,7 @@ export const Player: React.FC = () => {
         </div>
 
         {/* Right Volume & Functional Tools */}
-        <div className="flex items-center justify-end gap-2.5 w-1/4 min-w-[230px]">
+        <div className="flex items-center justify-end gap-1 md:gap-2.5 order-2 md:order-3 w-[42%] md:w-1/4 md:min-w-[230px]">
           {/* Lyrics Toggle */}
           <button
             onClick={() => {
@@ -601,7 +601,7 @@ export const Player: React.FC = () => {
           </button>
 
           {/* Volume Control */}
-          <div className="flex items-center gap-2 group pl-1">
+          <div className="hidden md:flex items-center gap-2 group pl-1">
             <button
               onClick={toggleMute}
               className="text-neutral-400 hover:text-white cursor-pointer"
