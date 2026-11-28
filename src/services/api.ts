@@ -22,12 +22,99 @@ function setNativeCached(key: string, data: any, ttlMs: number = 300000) {
   nativeCache.set(key, { data, expiry: Date.now() + ttlMs });
 }
 
-async function nativeSearchYouTube(query: string, limit: number = 20): Promise<Track[]> {
+function parseYtVideoRenderer(vr: any): Track | null {
+  if (!vr || !vr.videoId) return null;
+  const durationText = vr.lengthText?.simpleText || '3:30';
+  const parts = durationText.split(':').map(Number);
+  const durationSec = parts.length === 2
+    ? parts[0] * 60 + parts[1]
+    : (parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : 210);
+
+  // Skip Shorts / ultra-short clips (< 35s) and >20min mixes when searching songs
+  if (durationSec > 0 && (durationSec < 35 || durationSec > 1200)) return null;
+
+  let title = vr.title?.runs?.[0]?.text || '';
+  let artist = vr.ownerText?.runs?.[0]?.text || 'YouTube Music';
+
+  if (title.includes(' - ')) {
+    const split = title.split(' - ');
+    artist = split[0].trim();
+    title = split.slice(1).join(' - ').replace(/\(Official.*?\)|\[Official.*?\]|\(Lyric.*?\)|\[Lyric.*?\]/gi, '').trim();
+  }
+
+  const thumbs = vr.thumbnail?.thumbnails || [];
+  const coverUrl = thumbs[thumbs.length - 1]?.url || `https://i.ytimg.com/vi/${vr.videoId}/hqdefault.jpg`;
+
+  return {
+    id: `yt_${vr.videoId}`,
+    title,
+    artist,
+    album: 'YouTube Music',
+    coverUrl,
+    duration: durationText,
+    durationSec,
+    source: 'youtube',
+    youtubeId: vr.videoId,
+    externalUrl: `https://www.youtube.com/watch?v=${vr.videoId}`,
+  };
+}
+
+function extractYtResultsFromInitialData(data: any, limit: number): Track[] {
+  const contents = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
+  const results: Track[] = [];
+  for (const section of contents) {
+    const items = section.itemSectionRenderer?.contents || [];
+    for (const item of items) {
+      const parsed = parseYtVideoRenderer(item.videoRenderer);
+      if (parsed) {
+        results.push(parsed);
+        if (results.length >= limit) return results;
+      }
+    }
+  }
+  return results;
+}
+
+async function nativeSearchYouTube(query: string, limit: number = 20, rawQuery: boolean = false): Promise<Track[]> {
+  const finalQuery = rawQuery ? query : `${query} song`;
+  // 1. Fast JSON InnerTube API (avoids 1MB HTML download & consent wall)
   try {
-    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' music')}`;
+    const res = await fetch('https://www.youtube.com/youtubei/v1/search?prettyPrint=false', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: 'WEB',
+            clientVersion: '2.20241120.01.00',
+            hl: 'en',
+            gl: 'US',
+          },
+        },
+        query: finalQuery,
+        params: 'EgIQAQ%3D%3D', // Filter: Videos only (no playlists/channels)
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const fastResults = extractYtResultsFromInitialData(data, limit);
+      if (fastResults.length > 0) return fastResults;
+    }
+  } catch (err) {
+    console.warn('InnerTube search fallback triggered:', err);
+  }
+
+  // 2. HTML fallback with desktop UA + consent cookie
+  try {
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(finalQuery)}`;
     const res = await fetch(url, {
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
+        'Cookie': 'SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg; CONSENT=YES+cb.20230531-04-p0.en+FX+999',
       },
     });
     const html = await res.text();
@@ -35,49 +122,7 @@ async function nativeSearchYouTube(query: string, limit: number = 20): Promise<T
     if (!match) return [];
 
     const data = JSON.parse(match[1]);
-    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
-    const results: Track[] = [];
-
-    for (const section of contents) {
-      const items = section.itemSectionRenderer?.contents || [];
-      for (const item of items) {
-        const vr = item.videoRenderer;
-        if (vr && vr.videoId) {
-          const durationText = vr.lengthText?.simpleText || '3:30';
-          const parts = durationText.split(':').map(Number);
-          const durationSec = parts.length === 2 ? parts[0] * 60 + parts[1] : (parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : 210);
-
-          let title = vr.title?.runs?.[0]?.text || '';
-          let artist = vr.ownerText?.runs?.[0]?.text || 'YouTube Music';
-
-          if (title.includes(' - ')) {
-            const split = title.split(' - ');
-            artist = split[0].trim();
-            title = split.slice(1).join(' - ').replace(/\(Official.*?\)|\[Official.*?\]|\(Lyric.*?\)|\[Lyric.*?\]/gi, '').trim();
-          }
-
-          const thumbs = vr.thumbnail?.thumbnails || [];
-          const coverUrl = thumbs[thumbs.length - 1]?.url || `https://i.ytimg.com/vi/${vr.videoId}/hqdefault.jpg`;
-
-          results.push({
-            id: `yt_${vr.videoId}`,
-            title,
-            artist,
-            album: 'YouTube Music',
-            coverUrl,
-            duration: durationText,
-            durationSec,
-            source: 'youtube',
-            youtubeId: vr.videoId,
-            externalUrl: `https://www.youtube.com/watch?v=${vr.videoId}`,
-          });
-
-          if (results.length >= limit) break;
-        }
-      }
-      if (results.length >= limit) break;
-    }
-    return results;
+    return extractYtResultsFromInitialData(data, limit);
   } catch (err) {
     console.error('Native YouTube search error:', err);
     return [];
@@ -431,14 +476,28 @@ export async function getLyrics(title: string, artist: string): Promise<LyricsDa
 
 export async function resolveYouTubeId(title: string, artist: string): Promise<string | null> {
   if (isNative()) {
-    const cacheKey = `yt_res_${title}_${artist}`.toLowerCase();
+    const cleanTitle = title.replace(/\(feat\..*?\)|\(ft\..*?\)|\[.*?\]/gi, '').trim();
+    const cleanArtist = artist.split(/[,&]/)[0].trim();
+    const cacheKey = `yt_res_${cleanTitle}_${cleanArtist}`.toLowerCase();
     const cached = getNativeCached(cacheKey);
     if (cached) return cached;
 
-    const ytResults = await nativeSearchYouTube(`${artist} ${title} audio`, 3);
-    if (ytResults.length > 0 && ytResults[0].youtubeId) {
-      setNativeCached(cacheKey, ytResults[0].youtubeId, 3600000 * 24);
-      return ytResults[0].youtubeId;
+    const ytResults = await nativeSearchYouTube(`${cleanArtist} - ${cleanTitle} official audio`, 6, true);
+    if (ytResults.length > 0) {
+      const titleLower = cleanTitle.toLowerCase();
+      const artistLower = cleanArtist.toLowerCase();
+      const bestMatch =
+        ytResults.find(r =>
+          r.title.toLowerCase().includes(titleLower) &&
+          (r.artist.toLowerCase().includes(artistLower) || r.title.toLowerCase().includes(artistLower))
+        ) ||
+        ytResults.find(r => r.title.toLowerCase().includes(titleLower)) ||
+        ytResults[0];
+
+      if (bestMatch?.youtubeId) {
+        setNativeCached(cacheKey, bestMatch.youtubeId, 3600000 * 24);
+        return bestMatch.youtubeId;
+      }
     }
     return null;
   }

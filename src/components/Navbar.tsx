@@ -45,10 +45,21 @@ export const Navbar: React.FC = () => {
     const timer = setTimeout(async () => {
       const list = await getSuggestions(inputVal);
       setSuggestions(list);
-    }, 200);
+    }, 120);
 
     return () => clearTimeout(timer);
   }, [inputVal]);
+
+  // Fast live search when already on Search view
+  useEffect(() => {
+    if (activeView !== 'search') return;
+    const trimmed = inputVal.trim();
+    if (!trimmed || trimmed === searchQuery) return;
+    const timer = setTimeout(() => {
+      setSearchQuery(trimmed);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [inputVal, activeView, searchQuery, setSearchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

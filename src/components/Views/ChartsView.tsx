@@ -54,12 +54,12 @@ export const ChartsView: React.FC = () => {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto pb-32">
+    <div className="p-4 md:p-8 space-y-5 md:space-y-6 max-w-7xl mx-auto pb-32">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-5 md:pb-6">
         <div>
-          <h2 className="text-3xl font-extrabold text-white flex items-center gap-2.5">
-            <Flame className="w-7 h-7 text-orange-400" />
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2.5">
+            <Flame className="w-6 h-6 md:w-7 md:h-7 text-orange-400" />
             Top Trend Listeler
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
@@ -68,10 +68,10 @@ export const ChartsView: React.FC = () => {
         </div>
 
         {/* Tab switchers */}
-        <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+        <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 p-1 rounded-2xl border border-white/5 overflow-x-auto max-w-full">
           <button
             onClick={() => switchChartTab('tr')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 md:px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
               activeTab === 'tr'
                 ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
                 : 'text-neutral-400 hover:text-white'
@@ -82,7 +82,7 @@ export const ChartsView: React.FC = () => {
 
           <button
             onClick={() => switchChartTab('global')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 md:px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
               activeTab === 'global'
                 ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20'
                 : 'text-neutral-400 hover:text-white'
@@ -93,7 +93,7 @@ export const ChartsView: React.FC = () => {
 
           <button
             onClick={() => switchChartTab('youtube')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 md:px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
               activeTab === 'youtube'
                 ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                 : 'text-neutral-400 hover:text-white'
@@ -105,17 +105,17 @@ export const ChartsView: React.FC = () => {
       </div>
 
       {/* Play all bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <button
           onClick={handlePlayAll}
           disabled={currentList.length === 0}
-          className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          className="px-5 md:px-6 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
         >
           <Play className="w-4 h-4 fill-black" />
           <span>Tümünü Sırayla Çal ({currentList.length})</span>
         </button>
 
-        <span className="text-xs text-neutral-500">
+        <span className="hidden sm:inline text-xs text-neutral-500">
           Her gün otomatik güncellenir
         </span>
       </div>
@@ -127,7 +127,7 @@ export const ChartsView: React.FC = () => {
           <p className="text-sm">Listeler yükleniyor...</p>
         </div>
       ) : (
-        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2 md:p-4">
           <TrackList tracks={currentList} />
         </div>
       )}

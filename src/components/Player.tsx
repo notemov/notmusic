@@ -20,6 +20,7 @@ import {
   Activity,
   X
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { usePlayer } from '../context/PlayerContext';
 import { saveOfflineTrack } from '../services/offlineStorage';
 
@@ -173,7 +174,7 @@ export const Player: React.FC = () => {
             rel: 0,
             playsinline: 1,
             enablejsapi: 1,
-            origin: window.location.origin,
+            ...(Capacitor.isNativePlatform() ? {} : { origin: window.location.origin }),
           },
           events: {
             onReady: (e: any) => {

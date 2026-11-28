@@ -35,11 +35,11 @@ export const LibraryView: React.FC = () => {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto pb-32">
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto pb-32">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/5 pb-5 md:pb-6">
         <div>
-          <h2 className="text-3xl font-extrabold text-white">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
             Kitaplığım
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
@@ -48,10 +48,10 @@ export const LibraryView: React.FC = () => {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+        <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-2xl border border-white/5 overflow-x-auto max-w-full">
           <button
             onClick={() => setActiveTab('liked')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
               activeTab === 'liked'
                 ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20'
                 : 'text-neutral-400 hover:text-white'
@@ -63,7 +63,7 @@ export const LibraryView: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('playlists')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
               activeTab === 'playlists'
                 ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
                 : 'text-neutral-400 hover:text-white'
@@ -75,16 +75,67 @@ export const LibraryView: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 md:px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
               activeTab === 'history'
                 ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span>Geçmiş</span>
+            <span>Geçmiş ({history.length})</span>
           </button>
         </div>
+      </div>
+
+      {/* Quick Summary Cards */}
+      <div className="grid grid-cols-3 gap-2.5 md:gap-4">
+        <button
+          onClick={() => setActiveTab('liked')}
+          className={`text-left p-3.5 md:p-5 rounded-2xl border transition-all cursor-pointer ${
+            activeTab === 'liked'
+              ? 'bg-gradient-to-br from-pink-500/20 via-pink-500/5 to-transparent border-pink-500/30 shadow-lg shadow-pink-500/10'
+              : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/5'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <Heart className="w-4 h-4 md:w-5 md:h-5 text-pink-400 fill-pink-400/30" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-pink-400/80 hidden sm:inline">Favoriler</span>
+          </div>
+          <p className="text-xl md:text-2xl font-black text-white">{likedTracks.length}</p>
+          <p className="text-[11px] text-neutral-400 truncate">Beğenilen Parça</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('playlists')}
+          className={`text-left p-3.5 md:p-5 rounded-2xl border transition-all cursor-pointer ${
+            activeTab === 'playlists'
+              ? 'bg-gradient-to-br from-emerald-500/20 via-emerald-500/5 to-transparent border-emerald-500/30 shadow-lg shadow-emerald-500/10'
+              : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/5'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <Disc3 className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/80 hidden sm:inline">Koleksiyon</span>
+          </div>
+          <p className="text-xl md:text-2xl font-black text-white">{playlists.length}</p>
+          <p className="text-[11px] text-neutral-400 truncate">Çalma Listesi</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`text-left p-3.5 md:p-5 rounded-2xl border transition-all cursor-pointer ${
+            activeTab === 'history'
+              ? 'bg-gradient-to-br from-violet-500/20 via-violet-500/5 to-transparent border-violet-500/30 shadow-lg shadow-violet-500/10'
+              : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/5'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <History className="w-4 h-4 md:w-5 md:h-5 text-violet-400" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-400/80 hidden sm:inline">Son Çalınan</span>
+          </div>
+          <p className="text-xl md:text-2xl font-black text-white">{history.length}</p>
+          <p className="text-[11px] text-neutral-400 truncate">Dinlenen Parça</p>
+        </button>
       </div>
 
       {/* Content */}
@@ -112,7 +163,7 @@ export const LibraryView: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2 md:p-4">
               <TrackList tracks={likedTracks} />
             </div>
           )}
@@ -234,7 +285,7 @@ export const LibraryView: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2 md:p-4">
               <TrackList tracks={history} />
             </div>
           )}

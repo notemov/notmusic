@@ -48,12 +48,12 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, showAlbum = true }
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="grid grid-cols-[3rem_1fr_1fr_7rem_4rem] px-4 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wider border-b border-white/5 select-none">
+      <div className="grid grid-cols-[1.75rem_1fr_auto] md:grid-cols-[3rem_1fr_1fr_7rem_4rem] gap-2 md:gap-0 px-2.5 md:px-4 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wider border-b border-white/5 select-none">
         <span>#</span>
         <span>Başlık</span>
-        {showAlbum && <span>Albüm</span>}
-        <span>Platform</span>
-        <span className="flex items-center justify-end pr-3">
+        {showAlbum && <span className="hidden md:block">Albüm</span>}
+        <span className="hidden md:block">Platform</span>
+        <span className="flex items-center justify-end pr-1 md:pr-3">
           <Clock className="w-3.5 h-3.5" />
         </span>
       </div>
@@ -67,7 +67,7 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, showAlbum = true }
             <div
               key={track.id}
               onClick={() => playTrack(track, tracks)}
-              className={`group grid grid-cols-[3rem_1fr_1fr_7rem_4rem] items-center px-4 py-2.5 rounded-xl text-sm transition-all duration-150 cursor-pointer ${
+              className={`group grid grid-cols-[1.75rem_1fr_auto] md:grid-cols-[3rem_1fr_1fr_7rem_4rem] gap-2 md:gap-0 items-center px-2.5 md:px-4 py-2.5 rounded-xl text-sm transition-all duration-150 cursor-pointer ${
                 isCurrent
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                   : 'hover:bg-white/[0.05] text-neutral-300'
@@ -95,7 +95,7 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, showAlbum = true }
               </div>
 
               {/* Title & Artist */}
-              <div className="flex items-center gap-3 min-w-0 pr-4">
+              <div className="flex items-center gap-2.5 md:gap-3 min-w-0 pr-2 md:pr-4">
                 <img
                   src={track.coverUrl}
                   alt={track.title}
@@ -105,37 +105,40 @@ export const TrackList: React.FC<TrackListProps> = ({ tracks, showAlbum = true }
                   <p className={`font-medium truncate ${isCurrent ? 'text-emerald-400 font-semibold' : 'text-white'}`}>
                     {track.title}
                   </p>
-                  <p className="text-xs text-neutral-400 truncate">
-                    {track.artist}
-                  </p>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <p className="text-xs text-neutral-400 truncate">
+                      {track.artist}
+                    </p>
+                    <span className="md:hidden shrink-0 scale-90 origin-left">{getSourceBadge(track.source)}</span>
+                  </div>
                 </div>
               </div>
 
               {/* Album */}
               {showAlbum && (
-                <div className="text-xs text-neutral-400 truncate pr-4">
+                <div className="hidden md:block text-xs text-neutral-400 truncate pr-4">
                   {track.album || '-'}
                 </div>
               )}
 
               {/* Source Badge */}
-              <div>{getSourceBadge(track.source)}</div>
+              <div className="hidden md:block">{getSourceBadge(track.source)}</div>
 
               {/* Duration & Like */}
-              <div className="flex items-center justify-end gap-3 text-xs text-neutral-400">
+              <div className="flex items-center justify-end gap-2 md:gap-3 text-xs text-neutral-400 shrink-0">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleLike(track);
                   }}
-                  className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                  className={`md:opacity-0 md:group-hover:opacity-100 transition-opacity ${
                     isLiked(track.id) ? 'opacity-100 text-pink-500' : 'text-neutral-500 hover:text-white'
                   }`}
                 >
                   <Heart className={`w-3.5 h-3.5 ${isLiked(track.id) ? 'fill-pink-500' : ''}`} />
                 </button>
 
-                <span className="font-mono w-10 text-right">
+                <span className="font-mono w-9 md:w-10 text-right">
                   {track.duration || '3:30'}
                 </span>
               </div>
