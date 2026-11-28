@@ -282,6 +282,7 @@ export const Player: React.FC = () => {
     if (!currentYoutubeId) {
       if (currentTrack?.previewUrl && audioPreviewRef.current && !isLoadingTrack) {
         audioPreviewRef.current.src = currentTrack.previewUrl;
+        audioPreviewRef.current.load();
         audioPreviewRef.current.volume = isMuted ? 0 : volume;
         audioPreviewRef.current.play().catch(() => {});
         setIsPlaying(true);
@@ -300,7 +301,7 @@ export const Player: React.FC = () => {
         ytPlayerRef.current.playVideo();
       }
     }
-  }, [currentYoutubeId, currentTrack?.id, isLoadingTrack]);
+  }, [currentYoutubeId, currentTrack?.id, currentTrack?.previewUrl, isLoadingTrack]);
 
   // Playback timer ticker (every 300ms) with End-of-Track auto-detector
   useEffect(() => {

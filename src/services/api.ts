@@ -474,6 +474,54 @@ export async function getLyrics(title: string, artist: string): Promise<LyricsDa
   }
 }
 
+export async function resolveNativeAudioStream(youtubeId: string): Promise<string | null> {
+  if (!isNative() || !youtubeId) return null;
+  const cacheKey = `yt_audio_${youtubeId}`;
+  const cached = getNativeCached(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)',
+      },
+      body: JSON.stringify({
+        videoId: youtubeId,
+        context: {
+          client: {
+            clientName: 'IOS',
+            clientVersion: '19.29.1',
+            deviceMake: 'Apple',
+            deviceModel: 'iPhone16,2',
+            osName: 'iPhone',
+            osVersion: '17.5.1',
+            hl: 'en',
+            gl: 'US',
+          },
+        },
+      }),
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const data = await res.json();
+      const formats = data?.streamingData?.adaptiveFormats || [];
+      const audioFormat =
+        formats.find((f: any) => f.mimeType?.startsWith('audio/mp4') && f.url) ||
+        formats.find((f: any) => f.mimeType?.startsWith('audio/') && f.url);
+      if (audioFormat?.url) {
+        setNativeCached(cacheKey, audioFormat.url, 3600000);
+        return audioFormat.url;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export async function resolveYouTubeId(title: string, artist: string): Promise<string | null> {
   if (isNative()) {
     const cleanTitle = title.replace(/\(feat\..*?\)|\(ft\..*?\)|\[.*?\]/gi, '').trim();

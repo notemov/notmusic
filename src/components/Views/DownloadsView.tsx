@@ -119,13 +119,13 @@ export const DownloadsView: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-            <div className="grid grid-cols-[3rem_1fr_1fr_6rem_8rem] px-4 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wider border-b border-white/5 select-none">
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-2 md:p-4">
+            <div className="grid grid-cols-[1.75rem_1fr_auto] md:grid-cols-[3rem_1fr_1fr_6rem_8rem] gap-2 md:gap-0 px-2.5 md:px-4 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wider border-b border-white/5 select-none">
               <span>#</span>
               <span>Şarkı</span>
-              <span>Albüm</span>
-              <span>Boyut</span>
-              <span className="text-right pr-2">İşlem</span>
+              <span className="hidden md:block">Albüm</span>
+              <span className="hidden md:block">Boyut</span>
+              <span className="text-right pr-1 md:pr-2">İşlem</span>
             </div>
 
             <div className="divide-y divide-white/[0.02]">
@@ -137,7 +137,7 @@ export const DownloadsView: React.FC = () => {
                   <div
                     key={item.track.id}
                     onClick={() => handlePlayOffline(item)}
-                    className={`group grid grid-cols-[3rem_1fr_1fr_6rem_8rem] items-center px-4 py-2.5 rounded-xl text-sm transition-all duration-150 cursor-pointer ${
+                    className={`group grid grid-cols-[1.75rem_1fr_auto] md:grid-cols-[3rem_1fr_1fr_6rem_8rem] gap-2 md:gap-0 items-center px-2.5 md:px-4 py-2.5 rounded-xl text-sm transition-all duration-150 cursor-pointer ${
                       isCurrent
                         ? 'bg-cyan-500/10 text-cyan-400'
                         : 'hover:bg-white/[0.05] text-neutral-300'
@@ -147,7 +147,7 @@ export const DownloadsView: React.FC = () => {
                       {idx + 1}
                     </span>
 
-                    <div className="flex items-center gap-3 min-w-0 pr-4">
+                    <div className="flex items-center gap-2.5 md:gap-3 min-w-0 pr-2 md:pr-4">
                       <img
                         src={item.track.coverUrl}
                         alt={item.track.title}
@@ -157,21 +157,26 @@ export const DownloadsView: React.FC = () => {
                         <p className={`font-semibold truncate ${isCurrent ? 'text-cyan-400' : 'text-white'}`}>
                           {item.track.title}
                         </p>
-                        <p className="text-xs text-neutral-400 truncate">
-                          {item.track.artist}
-                        </p>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <p className="text-xs text-neutral-400 truncate">
+                            {item.track.artist}
+                          </p>
+                          <span className="md:hidden text-[10px] text-cyan-400/80 font-mono shrink-0">
+                            • {sizeMB} MB
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <span className="text-xs text-neutral-400 truncate pr-4">
+                    <span className="hidden md:block text-xs text-neutral-400 truncate pr-4">
                       {item.track.album || '-'}
                     </span>
 
-                    <span className="text-xs text-neutral-400 font-mono">
+                    <span className="hidden md:block text-xs text-neutral-400 font-mono">
                       {sizeMB} MB
                     </span>
 
-                    <div className="flex items-center justify-end gap-2 text-xs">
+                    <div className="flex items-center justify-end gap-1.5 md:gap-2 text-xs shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

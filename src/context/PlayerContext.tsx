@@ -7,8 +7,10 @@ import {
   AppSettings, 
   HistoryItem
 } from '../types';
+import { Capacitor } from '@capacitor/core';
 import { 
   resolveYouTubeId, 
+  resolveNativeAudioStream,
   getPersonalizedRecommendations, 
   getUserDataApi, 
   saveUserDataApi
@@ -534,6 +536,22 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     // Fast-path 1: Track already has YouTube ID -> start immediately
     if (track.youtubeId) {
+      if (Capacitor.isNativePlatform() && !isVideoOpen) {
+        const directStream = await resolveNativeAudioStream(track.youtubeId);
+        if (currentTrackRef.current?.id !== targetTrackId) return;
+        if (directStream) {
+          if (ytPlayerRef.current && typeof ytPlayerRef.current.stopVideo === 'function') {
+            try { ytPlayerRef.current.stopVideo(); } catch {}
+          }
+          setCurrentTrack({ ...track, previewUrl: directStream });
+          currentTrackRef.current = { ...track, previewUrl: directStream };
+          setCurrentYoutubeId(null);
+          setIsPlaying(true);
+          setIsLoadingTrack(false);
+          return;
+        }
+      }
+
       setCurrentYoutubeId(track.youtubeId);
       setIsPlaying(true);
       setIsLoadingTrack(false);
@@ -544,13 +562,34 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    // Fast-path 2: Resolve full-length stream in background (prevent double playback & race condition)
-    resolveYouTubeId(track.title, track.artist).then(resolvedId => {
+    // Fast-path 2: On native Android, if track already has previewUrl, start playing immediately while resolving full stream
+    if (Capacitor.isNativePlatform() && track.previewUrl) {
+      setCurrentYoutubeId(null);
+      setIsLoadingTrack(false);
+      setIsPlaying(true);
+    }
+
+    // Fast-path 3: Resolve full-length stream in background (prevent double playback & race condition)
+    resolveYouTubeId(track.title, track.artist).then(async resolvedId => {
       if (currentTrackRef.current?.id !== targetTrackId) return; // user switched tracks
 
       if (resolvedId) {
         setQueue(prev => prev.map(t => t.id === track.id ? { ...t, youtubeId: resolvedId } : t));
         queueRef.current = queueRef.current.map(t => t.id === track.id ? { ...t, youtubeId: resolvedId } : t);
+
+        if (Capacitor.isNativePlatform() && !isVideoOpen) {
+          const directStream = await resolveNativeAudioStream(resolvedId);
+          if (currentTrackRef.current?.id !== targetTrackId) return;
+          if (directStream) {
+            setCurrentTrack({ ...track, youtubeId: resolvedId, previewUrl: directStream });
+            currentTrackRef.current = { ...track, youtubeId: resolvedId, previewUrl: directStream };
+            setCurrentYoutubeId(null);
+            setIsLoadingTrack(false);
+            setIsPlaying(true);
+            return;
+          }
+        }
+
         setCurrentYoutubeId(resolvedId);
         setIsLoadingTrack(false);
         setIsPlaying(true);
