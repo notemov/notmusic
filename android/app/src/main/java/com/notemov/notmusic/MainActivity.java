@@ -16,6 +16,7 @@ public class MainActivity extends BridgeActivity {
     public class NativeMediaBridge {
         @JavascriptInterface
         public void startBackgroundPlayback(String title, String artist) {
+            BackgroundWebView.isMediaPlaying = true;
             Intent serviceIntent = new Intent(MainActivity.this, MediaPlaybackService.class);
             serviceIntent.putExtra(MediaPlaybackService.EXTRA_TITLE, title);
             serviceIntent.putExtra(MediaPlaybackService.EXTRA_ARTIST, artist);
@@ -28,6 +29,7 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public void stopBackgroundPlayback() {
+            BackgroundWebView.isMediaPlaying = false;
             Intent serviceIntent = new Intent(MainActivity.this, MediaPlaybackService.class);
             stopService(serviceIntent);
         }
